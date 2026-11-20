@@ -603,10 +603,9 @@ jobs:
             require-multicast: "1"
           - os: windows-latest
             python: "3.12"
-            # Direct mode on Windows is what the windows-direct job proves, and the docs still
-            # say "Not yet tested on Windows". Until windows-direct is green, the direct-mode
-            # tests may skip here when loopback multicast does not work; then set "1".
-            require-multicast: "0"
+            # Loopback multicast works on the Windows runner (the windows-direct job proves it),
+            # so the direct-mode tests must run here too, not skip.
+            require-multicast: "1"
     defaults:
       run:
         shell: bash
