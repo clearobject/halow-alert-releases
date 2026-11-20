@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The example console app for HalowClient.cs (Example.cs; how to run it: README.md).
+    HalowClient.cs is meant to be copied into your own project, including Unity
+    (.NET Standard 2.1). LangVersion 8.0 keeps it to C# 8, which Unity compiles.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Run on .NET 8, or on the next newer runtime when 8 is not installed (9, 10, ...). -->
+    <RollForward>Major</RollForward>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>HalowExample</RootNamespace>
+    <AssemblyName>HalowExample</AssemblyName>
+    <Version>0.1.0</Version>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>

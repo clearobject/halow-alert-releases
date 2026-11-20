@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/clearobject/halow-alert-releases/security/advisories/new
+    about: Please report security issues privately, never in a public issue.
+  - name: ClearObject
+    url: https://www.clearobject.com
+    about: For the wearable or HaLowLink hardware, ask your ClearObject contact. Learn more about ClearObject here.

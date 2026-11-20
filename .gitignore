@@ -1,0 +1,38 @@
+# Local settings: the token lives in .env (copy .env.example)
+.env
+.env.*
+!.env.example
+
+# Runtime output: the compose log volume and alert logs
+data/*
+!data/.keep
+*.jsonl
+
+# Release builds, and the Python package's build output (python -m build, pip install ./integrations/python)
+dist/
+build/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# .NET
+bin/
+obj/
+*.user
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

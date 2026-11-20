@@ -1,0 +1,34 @@
+# The halow-alert HTTP service, on a Linux host that is connected to the HaLowLink
+# (see README.md). Docker Engine as root only: not Docker Desktop, not rootless Docker,
+# whose containers cannot reach the HaLowLink interface.
+# First put HALOW_TOKEN=<long random token> in a .env file next to this file (README.md,
+# Quick start A; .env.example lists every setting), then:
+#   docker compose up -d
+# Each setting below can be changed in .env (docs/HTTP-API.md, "Service settings"). The defaults
+# match the image's, except HALOW_IFACE, which the image leaves empty (auto-detect).
+services:
+  halow-alert:
+    image: ghcr.io/clearobject/halow-alert:0.1.0
+    network_mode: host          # required: multicast leaves on the host's HaLowLink interface
+    restart: unless-stopped
+    # Runs as the owner of ./data so the log can be written there. 1000 is the first user
+    # on Ubuntu, Jetson and Raspberry Pi OS; if `id -u` / `id -g` say otherwise, put
+    # HALOW_UID=<uid> and HALOW_GID=<gid> in the .env file next to this file.
+    user: "${HALOW_UID:-1000}:${HALOW_GID:-1000}"
+    environment:
+      # Required: without a token anyone who can reach the API could trigger the wearables.
+      HALOW_TOKEN: ${HALOW_TOKEN:?put HALOW_TOKEN=<token> in a .env file next to docker-compose.yml}
+      HALOW_IFACE: ${HALOW_IFACE-192.168.12.50}        # this machine's address on the HaLowLink; empty = auto-detect
+      HALOW_HTTP: ${HALOW_HTTP:-0.0.0.0:8080}          # where the API listens (the health check reads it)
+      HALOW_FORMAT: ${HALOW_FORMAT:-raw8}
+      HALOW_BURST_SECONDS: ${HALOW_BURST_SECONDS:-0}
+      HALOW_HEARTBEAT: ${HALOW_HEARTBEAT:-15}
+      HALOW_LOG: ${HALOW_LOG-/data/halow-alert.jsonl}  # empty turns the log off
+      # Network settings: they must match the wearables. Change them only if ClearObject says so.
+      HALOW_ROUTER: ${HALOW_ROUTER:-192.168.12.1}
+      HALOW_GROUP: ${HALOW_GROUP:-239.255.0.10}
+      HALOW_PORT: ${HALOW_PORT:-5000}
+      HALOW_RESPONSE_PORT: ${HALOW_RESPONSE_PORT:-5001}
+      HALOW_TTL: ${HALOW_TTL:-4}
+    volumes:
+      - ./data:/data               # halow-alert.jsonl: every alert, ACK and heartbeat

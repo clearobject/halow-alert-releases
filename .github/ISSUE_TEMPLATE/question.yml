@@ -1,0 +1,42 @@
+name: Question
+description: Ask how to do something, or whether halow-alert fits your use.
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [documentation](https://github.com/clearobject/halow-alert-releases#documentation) may already have the answer.
+
+        **This issue is public. Never paste tokens, passwords or HaLow network passphrases.** For the hardware itself (powering, charging, passwords), ask your ClearObject contact.
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Setup
+      options:
+        - "A: Linux alert gateway (container) + HTTP API"
+        - "B: Direct mode (my program sends the multicast)"
+        - "Stand-in wearable only (no hardware)"
+        - "Not decided yet"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you are building, the languages and operating systems involved, and what you have tried.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: halow-alert version, if relevant
+      placeholder: "0.1.0"
+    validations:
+      required: false

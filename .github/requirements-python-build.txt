@@ -1,0 +1,6 @@
+# The tools that build and check the Python package in integrations/python, pinned. Used by
+# .github/workflows/checks.yml (job python-package) and release.yml, so that a release is
+# built exactly as CI built and tested it. setuptools itself is pinned as a range in
+# integrations/python/pyproject.toml; build installs it in an isolated environment.
+build==1.6.1
+twine==7.0.0
