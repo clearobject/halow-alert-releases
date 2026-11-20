@@ -1,0 +1,116 @@
+name: Bug report
+description: Something does not work as the documentation says.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Please check [Troubleshooting](https://github.com/clearobject/halow-alert-releases/blob/main/docs/TROUBLESHOOTING.md) first.
+
+        **This issue is public. Never paste tokens, passwords, HaLow network passphrases, your `.env` file or the output of `docker compose config`.** Replace anything sensitive, including host names and addresses outside 192.168.12.x, with `<removed>`.
+
+        Security vulnerabilities do not belong here: [report them privately](https://github.com/clearobject/halow-alert-releases/security/advisories/new).
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Setup
+      description: Which way do you drive the wearables? See "Choose your setup" in the README.
+      options:
+        - "A: Linux alert gateway (container) + HTTP API"
+        - "B: Direct mode (my program sends the multicast)"
+        - "Stand-in wearable only (no hardware)"
+        - "Not sure"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system of the machine connected to the HaLowLink
+      options:
+        - Ubuntu or Debian
+        - Raspberry Pi OS (64-bit)
+        - NVIDIA Jetson (Linux for Tegra)
+        - Other Linux
+        - macOS
+        - Windows
+        - Not connected yet
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: Operating system version, and the OS of your client machine if different
+      placeholder: "Ubuntu 24.04 gateway; client on Windows 11"
+    validations:
+      required: false
+  - type: dropdown
+    id: link
+    attributes:
+      label: How the HaLowLink is connected
+      options:
+        - USB-C
+        - HaLowLink LAN port (Ethernet)
+        - Not connected (stand-in wearable only)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: halow-alert version
+      description: "Setup A: `docker run --rm ghcr.io/clearobject/halow-alert:<tag> --version`. Python package: `halow-client --version`. Otherwise the release you downloaded."
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: integration
+    attributes:
+      label: Integration used, if any
+      placeholder: "integrations/python, integrations/csharp, my own code, ..."
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Include the times, so we can match them to the logs.
+      placeholder: |
+        1. Started the gateway with docker compose up -d
+        2. Sent POST /alert from the client at 14:02
+        3. Expected the wearable to buzz; it did not, and GET /wearables showed no ACK
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: doctor output
+      description: "Setup A: `docker run --rm --network host ghcr.io/clearobject/halow-alert:<tag> doctor`. Direct mode: the output of the checks in docs/NETWORK.md, \"Check the setup\"."
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, with tokens and passwords removed
+      description: "Setup A: `docker compose logs --tail 200`, and the output of `GET /health` and `GET /wearables`. Direct mode: your program's output or error message. Replace client addresses outside 192.168.12.x, host names and labels you do not want public with `<removed>`."
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: network
+    attributes:
+      label: Network details
+      description: "Optional. Linux: `ip -br -4 addr | grep -F 192.168.12.` and `ip route get 192.168.12.1`. macOS: `route -n get 192.168.12.1`. Windows: `Find-NetRoute -RemoteIPAddress 192.168.12.1`. Mention any VPN. Replace addresses outside 192.168.12.x with `<removed>`."
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I removed tokens, passwords, HaLow network passphrases, host names, addresses outside 192.168.12.x and anything else I do not want to publish.
+          required: true
+        - label: I checked docs/TROUBLESHOOTING.md.
+          required: false

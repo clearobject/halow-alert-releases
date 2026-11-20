@@ -1,0 +1,3241 @@
+{
+ "about": "Test vectors for the integrations' codecs, produced by the gateway's own encoder and decoder (halow-alert 0.1.0). raw8 and gateway_message: input -> bytes (hex). device_response: bytes (hex) -> decoded reply, or null when the bytes are rejected. Integers are written as decimal strings so 64-bit values survive JSON.",
+ "raw8": [
+  {
+   "seconds": 1767225600.123,
+   "hex": "3bdf07406e55da41"
+  },
+  {
+   "seconds": 0.0,
+   "hex": "0000000000000000"
+  },
+  {
+   "seconds": -1.5,
+   "hex": "000000000000f8bf"
+  },
+  {
+   "seconds": 1000000000.0,
+   "hex": "0000000065cdcd41"
+  },
+  {
+   "seconds": 1700000000.0,
+   "hex": "00000040fc54d941"
+  },
+  {
+   "seconds": 1731900000.987654,
+   "hex": "b9353f98acced941"
+  },
+  {
+   "seconds": 9007199254740992.0,
+   "hex": "0000000000004043"
+  },
+  {
+   "seconds": 1e-300,
+   "hex": "59f3f8c21f6ea501"
+  },
+  {
+   "seconds": 1767225600.0001,
+   "hex": "a30100406e55da41"
+  },
+  {
+   "seconds": 4102444800.5,
+   "hex": "000010e0ca90ee41"
+  },
+  {
+   "seconds": 1858818467.6781096,
+   "hex": "2666eb68d4b2db41"
+  },
+  {
+   "seconds": 1841027984.7927132,
+   "hex": "d0bb32e4f66edb41"
+  },
+  {
+   "seconds": 1842903260.543637,
+   "hex": "f3ca22371e76db41"
+  },
+  {
+   "seconds": 1822045412.9826114,
+   "hex": "1be33e398d26db41"
+  },
+  {
+   "seconds": 1895241278.3292692,
+   "hex": "bf12958fc53ddc41"
+  },
+  {
+   "seconds": 1868982677.1925159,
+   "hex": "2e524c659ad9db41"
+  },
+  {
+   "seconds": 1750788556.8822873,
+   "hex": "65773873ba16da41"
+  },
+  {
+   "seconds": 1899008777.279912,
+   "hex": "14ea51c2244cdc41"
+  },
+  {
+   "seconds": 1788725783.4702358,
+   "hex": "5818de8572a7da41"
+  },
+  {
+   "seconds": 1872370594.8221033,
+   "hex": "579db4e886e6db41"
+  },
+  {
+   "seconds": 1754963103.843097,
+   "hex": "4df5f527a726da41"
+  },
+  {
+   "seconds": 1710060595.9862998,
+   "hex": "891fff0c5d7bd941"
+  },
+  {
+   "seconds": 1833192737.6721334,
+   "hex": "3c046b481351db41"
+  },
+  {
+   "seconds": 1844896394.436057,
+   "hex": "5ce89ba2b87ddb41"
+  },
+  {
+   "seconds": 1705490396.330283,
+   "hex": "5b2315f7ed69d941"
+  },
+  {
+   "seconds": 1797309348.7430243,
+   "hex": "b68d2fe930c8da41"
+  },
+  {
+   "seconds": 1766072996.4071105,
+   "hex": "190e1aa90851da41"
+  },
+  {
+   "seconds": 1862096557.8576415,
+   "hex": "99e376ab55bfdb41"
+  },
+  {
+   "seconds": 1810351182.8432174,
+   "hex": "46f7b513f1f9da41"
+  },
+  {
+   "seconds": 1711711110.1837893,
+   "hex": "34c38be1a881d941"
+  }
+ ],
+ "gateway_message": [
+  {
+   "timestamp_ms": "1767225600123",
+   "command": "1",
+   "hex": "08fbd0eab6b7331001"
+  },
+  {
+   "timestamp_ms": "1767225600123",
+   "command": "2",
+   "hex": "08fbd0eab6b7331002"
+  },
+  {
+   "timestamp_ms": "1",
+   "command": "1",
+   "hex": "08011001"
+  },
+  {
+   "timestamp_ms": "0",
+   "command": "1",
+   "hex": "1001"
+  },
+  {
+   "timestamp_ms": "0",
+   "command": "0",
+   "hex": ""
+  },
+  {
+   "timestamp_ms": "1767225600123",
+   "command": "0",
+   "hex": "08fbd0eab6b733"
+  },
+  {
+   "timestamp_ms": "18446744073709551615",
+   "command": "2",
+   "hex": "08ffffffffffffffffff011002"
+  },
+  {
+   "timestamp_ms": "127",
+   "command": "1",
+   "hex": "087f1001"
+  },
+  {
+   "timestamp_ms": "128",
+   "command": "1",
+   "hex": "0880011001"
+  },
+  {
+   "timestamp_ms": "300",
+   "command": "2",
+   "hex": "08ac021002"
+  },
+  {
+   "timestamp_ms": "9223372036854775808",
+   "command": "1",
+   "hex": "08808080808080808080011001"
+  },
+  {
+   "timestamp_ms": "16383",
+   "command": "2",
+   "hex": "08ff7f1002"
+  },
+  {
+   "timestamp_ms": "16384",
+   "command": "1",
+   "hex": "088080011001"
+  },
+  {
+   "timestamp_ms": "4164861875627027586",
+   "command": "3",
+   "hex": "0882d9c3daf3f9a3e6391003"
+  },
+  {
+   "timestamp_ms": "17147115166663549094",
+   "command": "1",
+   "hex": "08a6c1c6fdd0ccb2fbed011001"
+  },
+  {
+   "timestamp_ms": "7148106543012706603",
+   "command": "0",
+   "hex": "08abf2ab87f5a0cb9963"
+  },
+  {
+   "timestamp_ms": "18107282359973582613",
+   "command": "0",
+   "hex": "0895aeb08febabffa4fb01"
+  },
+  {
+   "timestamp_ms": "17924867361290470284",
+   "command": "300",
+   "hex": "088c87d99dd2fcfae0f80110ac02"
+  },
+  {
+   "timestamp_ms": "3904769428312661616",
+   "command": "1",
+   "hex": "08f0bc8683b5e3a198361001"
+  },
+  {
+   "timestamp_ms": "15720693870587799242",
+   "command": "2",
+   "hex": "08cacdaf9889f9c795da011002"
+  },
+  {
+   "timestamp_ms": "7903796648966359155",
+   "command": "3",
+   "hex": "08f390c0b4d1a5fbd76d1003"
+  },
+  {
+   "timestamp_ms": "11249414633506896036",
+   "command": "1",
+   "hex": "08a4f189ca9de0fc8e9c011001"
+  },
+  {
+   "timestamp_ms": "5577166609797525230",
+   "command": "0",
+   "hex": "08eedd9ab1b8ef84b34d"
+  },
+  {
+   "timestamp_ms": "12204503376935635952",
+   "command": "300",
+   "hex": "08f097b7d28be5c6afa90110ac02"
+  },
+  {
+   "timestamp_ms": "15889631990439463926",
+   "command": "1",
+   "hex": "08f697cf8ebc83d4c1dc011001"
+  },
+  {
+   "timestamp_ms": "18049683325188070183",
+   "command": "0",
+   "hex": "08a7b681d1a5ebd6befa01"
+  },
+  {
+   "timestamp_ms": "16819131629886902232",
+   "command": "0",
+   "hex": "08d89fc8afb1e3e3b4e901"
+  },
+  {
+   "timestamp_ms": "3261208827810070522",
+   "command": "3",
+   "hex": "08fafff2bfe78489a12d1003"
+  },
+  {
+   "timestamp_ms": "7430197823122041853",
+   "command": "0",
+   "hex": "08fdd7c790dab1d78e67"
+  },
+  {
+   "timestamp_ms": "15385211737039621391",
+   "command": "300",
+   "hex": "088f9aabe3f791d0c1d50110ac02"
+  },
+  {
+   "timestamp_ms": "13282673454538525681",
+   "command": "2",
+   "hex": "08f1979eea9da4e2aab8011002"
+  },
+  {
+   "timestamp_ms": "10830990485180930284",
+   "command": "1",
+   "hex": "08ecb1e196e18edaa796011001"
+  },
+  {
+   "timestamp_ms": "15461805594397884034",
+   "command": "1",
+   "hex": "0882fdeec1c9c8d7c9d6011001"
+  }
+ ],
+ "device_response": [
+  {
+   "hex": "08a3d1eab6b73310011a020801",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08a3d1eab6b73310011a00",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK",
+    "ack_success": false
+   }
+  },
+  {
+   "hex": "1001",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "1000",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "1007",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "7"
+   }
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "fake-01",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "-1",
+     "rssi": "-128",
+     "uptime_seconds": "4294967295",
+     "app_state": "4294967295",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9310641800200128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9ar\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufeffbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08ffffffffffffffffff011001",
+   "result": {
+    "timestamp_ms": "18446744073709551615",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "080510014a0378797a7803",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "080510021001",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "080539000000000000000045000000001001",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "08051002221210fbffffffffffffffff0120878080808020",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "-5",
+     "rssi": "0",
+     "uptime_seconds": "7",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "1081808080808080808002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "18446744073709551617"
+   }
+  },
+  {
+   "hex": "08ffffffffffffffffff7f1001",
+   "result": {
+    "timestamp_ms": "18446744073709551615",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "90808080808080808002051001",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "10011a0b0880808080808080808002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08",
+   "result": null
+  },
+  {
+   "hex": "0880",
+   "result": null
+  },
+  {
+   "hex": "10011a0508",
+   "result": null
+  },
+  {
+   "hex": "0b",
+   "result": null
+  },
+  {
+   "hex": "0c01",
+   "result": null
+  },
+  {
+   "hex": "0f",
+   "result": null
+  },
+  {
+   "hex": "0e",
+   "result": null
+  },
+  {
+   "hex": "120101",
+   "result": null
+  },
+  {
+   "hex": "1a01",
+   "result": null
+  },
+  {
+   "hex": "08ffffffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "22020a05",
+   "result": null
+  },
+  {
+   "hex": "10011801",
+   "result": null
+  },
+  {
+   "hex": "100222020805",
+   "result": null
+  },
+  {
+   "hex": "0a01781001",
+   "result": null
+  },
+  {
+   "hex": "1501000000",
+   "result": null
+  },
+  {
+   "hex": "08a3",
+   "result": null
+  },
+  {
+   "hex": "08a3d1",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ea",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b733",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "08a3d1eab6b73310",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7331001",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "08a3d1eab6b73310011a",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a02",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a0208",
+   "result": null
+  },
+  {
+   "hex": "08a3d1d1b6b733dc011a020801",
+   "result": null
+  },
+  {
+   "hex": "f6a3d1eab6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3f7eab6b73310011a022101",
+   "result": null
+  },
+  {
+   "hex": "08a3e7eab6b733101c96020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7fa86011ad90801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eaf6a43310011a020801",
+   "result": {
+    "timestamp_ms": "1762259544227",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3d1eab6b77510011a020874",
+   "result": {
+    "timestamp_ms": "4034968332451",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "a0a3d1eab6b73315011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ea91b73310011a160801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b733105d1a020801",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "93",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "0851d1eab6b73310c31a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a020846",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "c379d1eab6f33310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08e9d1eab6b73310011a020801",
+   "result": {
+    "timestamp_ms": "1767225600233",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3d1eab6b75810c91a020801",
+   "result": null
+  },
+  {
+   "hex": "081bd1eab6b7336d011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a023201",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7f710011a020701",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7050d011a790801",
+   "result": null
+  },
+  {
+   "hex": "9ba3d1eab6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6f53310011a190896",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a0208ba",
+   "result": null
+  },
+  {
+   "hex": "08a3ffeab6b7c710011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b733107c1a020801",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "124",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "eea3d1c4b6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08fb",
+   "result": null
+  },
+  {
+   "hex": "08fbd0",
+   "result": null
+  },
+  {
+   "hex": "08fbd0ea",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b733",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "08fbd0eab6b73310",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT"
+   }
+  },
+  {
+   "hex": "08fbd0eab6b733100222",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a0577",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d30",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d303710",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d30371057",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff012090",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c28",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c2801",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c280130",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b733100222820a05777a2d3037105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05fb7a643037105718c2ffffffffffffffff0120901c28013090",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d303710577cc2ffff94ffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff013e901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b733100222410a05777a133037105718c2ffffffffffffffe10120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0ea7ab7331002221b0aa8777a2d9637105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff012090e028013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd050b6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c280130f5",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab7b7331002221b0a05777a2d303710eb18c2ffffffffffffffff0120901c1f013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002091b0a05777a2d3037105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffc1ffffffffa7ff0120901c28013002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "87",
+     "rssi": "-1015870",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d303710575fc2ffffffffffffffff0120900b28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2dfd37105718c2ffffffffffff43ff01204f1c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002501b6c05777a2d3037105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffd9ffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "87",
+     "rssi": "-79691838",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7651002221b0a05777a2d3037105718c2ffa1ffffffffffff0120901c280130e4",
+   "result": null
+  },
+  {
+   "hex": "0859d0eab664331002221b0a05777a2d3037105718c2fffffbffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "89",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "87",
+     "rssi": "-8388670",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab625331002221b0a05777a2d3037105718c2b9ffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ff44ffe6ffffffff0120901c285d3002",
+   "result": null
+  },
+  {
+   "hex": "aefbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120901c28ce3002",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a2d3037105718c2ffffffffffffffff0120ea1028013002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "2154",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7331002221b0a05777a5b3037105718c2ffffffffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz[07",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08a3f3eab60c3310011a020801",
+   "result": null
+  },
+  {
+   "hex": "5ea393eab6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d198b6b73310011a02aa01",
+   "result": null
+  },
+  {
+   "hex": "ff8ad1e0b6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08c7d1eab6b73310011a020801",
+   "result": {
+    "timestamp_ms": "1767225600199",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3f9eab6b73310861a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d190b6b73310011afd0801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ea80b73310011a0208e6",
+   "result": null
+  },
+  {
+   "hex": "08e4d1eab6b73310011a02e801",
+   "result": null
+  },
+  {
+   "hex": "0841d1eab6b73310011a022833",
+   "result": null
+  },
+  {
+   "hex": "0860d1eab6b73110011a020801",
+   "result": null
+  },
+  {
+   "hex": "81a3d1eab6b78710011a1c0801",
+   "result": null
+  },
+  {
+   "hex": "08a3c5eab6b73310bf1a020801",
+   "result": null
+  },
+  {
+   "hex": "586ed159b6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "e8a3d1ea18263310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310011a02086a",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3d1eae4b73310011a020801",
+   "result": {
+    "timestamp_ms": "1767322069155",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3d1eab6b7ce100181020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1deb651331001fd020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6973310011a020801",
+   "result": {
+    "timestamp_ms": "1758635665571",
+    "code": "ACK",
+    "ack_success": true
+   }
+  },
+  {
+   "hex": "08a3d1eab6b73310011a0208d8",
+   "result": null
+  },
+  {
+   "hex": "08a3d155b6b73310011a020801",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7ab10011a02088e",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6753310011a020801",
+   "result": null
+  },
+  {
+   "hex": "f5a3d1eab6b73310011a020801",
+   "result": {
+    "timestamp_ms": "1",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "08a3d1eab6b7335d01c200",
+   "result": null
+  },
+  {
+   "hex": "f5a34beab6653310011a00",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "ACK",
+    "ack_success": false
+   }
+  },
+  {
+   "hex": "08a36feab6b73310011a64",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ea84b73310011a00",
+   "result": {
+    "timestamp_ms": "1767120742563",
+    "code": "ACK",
+    "ack_success": false
+   }
+  },
+  {
+   "hex": "08a3d157b6c5331001a300",
+   "result": null
+  },
+  {
+   "hex": "08a3d1aeb6b733b9011a00",
+   "result": null
+  },
+  {
+   "hex": "08a320eab6b73310011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6e3331001ba00",
+   "result": null
+  },
+  {
+   "hex": "08e178ea7cb73310011a00",
+   "result": null
+  },
+  {
+   "hex": "0843d1eab6b733d301d900",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73710141a00",
+   "result": {
+    "timestamp_ms": "1904664553635",
+    "code": "20",
+    "ack_success": false
+   }
+  },
+  {
+   "hex": "08a3d1eab6b73310011a92",
+   "result": null
+  },
+  {
+   "hex": "b0a3d1eab6b7480e011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73310015800",
+   "result": {
+    "timestamp_ms": "1767225600163",
+    "code": "ACK"
+   }
+  },
+  {
+   "hex": "06a3d1eab6b73310011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ea23b73310c11a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b7a410011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1ead2b74610015f00",
+   "result": null
+  },
+  {
+   "hex": "01a3d1eab6b73310011000",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "08a30deab6183310011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73323011a00",
+   "result": null
+  },
+  {
+   "hex": "0c34d11eb6b73310011a00",
+   "result": null
+  },
+  {
+   "hex": "082cd1eab6b78d88011a00",
+   "result": null
+  },
+  {
+   "hex": "08a3d1eab6b73410011a00",
+   "result": {
+    "timestamp_ms": "1801585338531",
+    "code": "ACK",
+    "ack_success": false
+   }
+  },
+  {
+   "hex": "08a3d1eab6413310011a00",
+   "result": null
+  },
+  {
+   "hex": "0800",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "080010",
+   "result": null
+  },
+  {
+   "hex": "08001002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT"
+   }
+  },
+  {
+   "hex": "0800100222",
+   "result": null
+  },
+  {
+   "hex": "08001002221d",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a07",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a076661",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b65",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d30",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d303110",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d30311057",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff012090",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c28",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c2801",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c280130",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b602d30311057fdc2fffffffffaffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08009002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "0800100222a00a0766616b652d3031105718c2ffffffffffffffe40120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031a25718c2ffffffffffffedff0120901c28d53002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffff4fff530120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0166616b652d3031105718c2ffffffffffffffff0120f03028013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d30311057c4c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "0800100222310a0766616b652d3031105718c2ffffffffffff00ff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002db1d0a0766616b652d3031105718c2ffffffff3affffff0120dd1c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ff31ffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2fffffffffffeffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "fake-01",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffff97ffff7a0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ff50ffffffffffffbd20901c287f3002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031107618c2ffffffffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "fake-01",
+     "battery_percentage": "118",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffff24ffffffff012090d028013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffffffffffff0120901c285c3002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "fake-01",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "92",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08001002221d0a0766616b65bd30311057d5c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d309510a818c2ff8dffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105718c2ffffffafffffffff0104901c2801b502",
+   "result": null
+  },
+  {
+   "hex": "08001002221d0a0766616b652ded31105718c2ffffffffffffffff0120901c28013f02",
+   "result": null
+  },
+  {
+   "hex": "0800109922af0a0766616b652d3031105718c2ffffffffffffffff0120901c28013002",
+   "result": null
+  },
+  {
+   "hex": "08001002221d720766616b8f2d3031105718c2ffffffffffffffff0120901c28013002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "87",
+     "rssi": "-62",
+     "uptime_seconds": "3600",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08001002221d0a0766616b652d3031105418c2ffff37ffffffffff0120901c28013004",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a0577",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d30",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d3037",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff0118",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f30",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff01184bffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fb82eacfb7331002222b0a05777a2d303710ffffffffffffffffff011839ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffff4cffffffff011880ffffffffffffffff01208dffbcff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a5b777a2d303710ffffffffffffffffff011880ffffffffffff3eff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710f2ffffffffffffffff011880ffffff6affffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b74c1002222b0a05777aaf303710ffffffffffffffffff011880ffffffffffff51ff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff01de80ffffffffffffffff0120ff64ffff0feeffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffff36ffffffff78011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002229c0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff01beffffffff0f2858ffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05770a2d303710ffffffffffffffffff011880ffffffffffff95ff0120ffffffff0f28ffffffff0f3000",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\n-07",
+     "battery_percentage": "-1",
+     "rssi": "-128",
+     "uptime_seconds": "4294967295",
+     "app_state": "4294967295",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "08fbd0eab6b7331002342b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ff88ffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fb2ceab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ff4fffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011580ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b733100222ab0a05777a2d303710ffffffffffffffffff01187effffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "082ed0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f0100",
+   "result": null
+  },
+  {
+   "hex": "08fb6aeab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffff6dffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff2820ffffffff0f28ffff47ff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b72e1002222b0a05777a2d303710ffffffffffffff7eff011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "eefbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a0577762d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wv-07",
+     "battery_percentage": "-1",
+     "rssi": "-128",
+     "uptime_seconds": "4294967295",
+     "app_state": "4294967295",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "c3fbd0eab6b7331002222b0a05777a2d303710fffffffffffffff4ff011880ffffffffffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffa1ffffffffffffff0118801dffffffffffffff0120ffffffff0f28ffffffff6f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ff37ffffffffffffff011880ffffff2dffffffff0120ffffffff0f28ffffffff0f3000",
+   "result": null
+  },
+  {
+   "hex": "08fbd0eab6b7331002222b0a05777a2d303710ffffffffffffffffff011880ffffffffffffffff0120ffffffff0f28ff83ffff0f3000",
+   "result": {
+    "timestamp_ms": "1767225600123",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "wz-07",
+     "battery_percentage": "-1",
+     "rssi": "-128",
+     "uptime_seconds": "4294967295",
+     "app_state": "4294951423",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "UNKNOWN"
+   }
+  },
+  {
+   "hex": "080510",
+   "result": null
+  },
+  {
+   "hex": "08051002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT"
+   }
+  },
+  {
+   "hex": "0805100222",
+   "result": null
+  },
+  {
+   "hex": "080510022219",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a00",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff07",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff0718",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff07188080",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff0718808080",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff01",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff0120",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff012000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff01200028",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff0120002800",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff012000280030",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffff1201200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100422190a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "4",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8b0ffffff0120002800f200",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffacffff071880808080f8ffffffff012000c7003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffff9901200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff015c0028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a004fffffffff071880038080f8ffff0aff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffff42ff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff07180d80808002ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "13",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805af0222190a0010ffffffff071880808028f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff076180a28080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "08051002c8190a0010ffffffff071880808080f8ffffffff012000280058dd",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a1010ffffffffc21880808080f8ffffffd501200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071882808080f8ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483646",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100263190a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222720a00105effffff071880808080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff071880808080f8ffffffff01200028323000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "50",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222f10a0010ffffffff071880808080f8ffffffffd2200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805ba0222190a0010ffff35ff071880808080f8ffffffff01205128003000",
+   "result": null
+  },
+  {
+   "hex": "080510a622190a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222197a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "0805100222190ad910ffffffff07188080b580f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffff68ff071880bf8080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805100222190a0010ffffffff07f580808080f8ffffffff01200028003000",
+   "result": null
+  },
+  {
+   "hex": "0805101a22190a0010ffffffff071880808080f8ffffffff01200028003000",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "26",
+    "heartbeat": {
+     "device_id": "",
+     "battery_percentage": "2147483647",
+     "rssi": "-2147483648",
+     "uptime_seconds": "0",
+     "app_state": "0",
+     "device_state": "0"
+    }
+   }
+  },
+  {
+   "hex": "080510022214",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a08",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a9",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a961",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e2",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c93",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9310",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c931064",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c93106418",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9310641800",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c931064180020",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c93106418002001",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9310641800200128",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c931064180020012801",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c93106418002001280130",
+   "result": null
+  },
+  {
+   "hex": "0805106822140a0877c3a9615ee29c9310641800200128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "104",
+    "heartbeat": {
+     "device_id": "w\u00e9a^\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9340641800200128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9ar\u2713",
+     "battery_percentage": "0",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "0805102622140a0877c6a96172e29c9310641800200128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "38",
+    "heartbeat": {
+     "device_id": "w\u01a9ar\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "080510029c140a0877c7a96172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c931064180020010a013002",
+   "result": null
+  },
+  {
+   "hex": "e005100222140a0877c3a96172e29c931864188b200128013002",
+   "result": null
+  },
+  {
+   "hex": "08e8100222140a0877c3a96123e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "08d5100222140a0877c3a96172e29c931064180020018f013002",
+   "result": null
+  },
+  {
+   "hex": "08511002d8140a8477c3a96172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100247145a087735a96172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222d30a0877c3a96172e29c931064180020012801305a",
+   "result": null
+  },
+  {
+   "hex": "08cc100222140a0877c3a96172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a91872e29c9310641800200128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9\u0018r\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c93106418002001284c3002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9ar\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "76",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "0805100222140a3f77c3a96172e29c9310641800200128013019",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a96172e29c9310641800200128073002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9ar\u2713",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "7",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08bd100222140a0877c3a96172e29c931064180020012801306e",
+   "result": null
+  },
+  {
+   "hex": "b605100222140a0877c30e6172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805110222140a0877c3a96172e29c931064b900200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a3577c3a96172e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222140a0877c3a9615fe29c93106418ec200128013002",
+   "result": null
+  },
+  {
+   "hex": "0800100222140a0877c3a96172e29e9310641800200128013002",
+   "result": {
+    "timestamp_ms": "0",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "w\u00e9ar\u2793",
+     "battery_percentage": "100",
+     "rssi": "0",
+     "uptime_seconds": "1",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "0805100222140a0177c3a96137e29c9310641800200128013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06ef",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbb",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf62",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d10",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d1032",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff0120",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a28",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a2801",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a280130",
+   "result": null
+  },
+  {
+   "hex": "0805100222600a06efbbbf626f6d103218d8ffc5ffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "0805100222990a06efbbbf626f6d103218d8ffffffffff34ffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "b3051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a8401ae02",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffff3dffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffa7ffffffffffff0120d428013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01203128013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufeffbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "49",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffff87ff01200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufeffbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a28018802",
+   "result": null
+  },
+  {
+   "hex": "6d05100222530a31efbbbf626f6d103218d8ffffffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "b9052302221b0a06efbbbf626f6d1032a7d8ffffffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "c3051002221b0a06efbbbf626f6d103218d8ffffffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbf616f6d3ad118d8ffffffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0a06efbbbfe26f6d103218d8ffffffffffffffff01200a28015902",
+   "result": null
+  },
+  {
+   "hex": "089c1002221b0a06efbbbf626f45103218d8ffffffffffffffff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "08051002221b0aeaefbbbf626f6d103218d8ffffffffffffa3ff01200a28013002",
+   "result": null
+  },
+  {
+   "hex": "08051076221b0a06efbbbf626f6d103218d8ffffffffff8bffff01200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "118",
+    "heartbeat": {
+     "device_id": "\ufeffbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efbbbf626f6d103218d8ffffffffffffffff45200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufeffbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efbbbf7f6f6d103218d8ffffffffffe6ffff01200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufeff\u007fom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "08051002221b0a06efa9bf626f6d103218d8ffffffffffffffff01200a28013002",
+   "result": {
+    "timestamp_ms": "5",
+    "code": "HEARTBEAT",
+    "heartbeat": {
+     "device_id": "\ufa7fbom",
+     "battery_percentage": "50",
+     "rssi": "-40",
+     "uptime_seconds": "10",
+     "app_state": "1",
+     "device_state": "2"
+    }
+   }
+  },
+  {
+   "hex": "dbd9fb90b52649",
+   "result": null
+  },
+  {
+   "hex": "50fe061f03c07df7c4791a0d28660977c26a8aaa744f9d1d",
+   "result": null
+  },
+  {
+   "hex": "10444f7ec6187584d8fc2b3769cabbf66d67",
+   "result": null
+  },
+  {
+   "hex": "ca38224616e3f1f85957118ea647de49e360",
+   "result": null
+  },
+  {
+   "hex": "c5089770a816122ec1",
+   "result": null
+  },
+  {
+   "hex": "fe9b2e300f",
+   "result": null
+  },
+  {
+   "hex": "1715f07f8a4d2e42",
+   "result": null
+  },
+  {
+   "hex": "afd0",
+   "result": null
+  },
+  {
+   "hex": "4f2ac07c3f060ff60eeef48c8b1a25193741ecd343",
+   "result": null
+  },
+  {
+   "hex": "afb894",
+   "result": null
+  },
+  {
+   "hex": "a9727e53a6a04698d434fd257298a0404d79b1ef35cf0f",
+   "result": null
+  },
+  {
+   "hex": "2cc0",
+   "result": null
+  },
+  {
+   "hex": "9d41e0c388184dc4852528a15d924dfc18b5c986b6ba",
+   "result": null
+  },
+  {
+   "hex": "990cc48d",
+   "result": null
+  },
+  {
+   "hex": "718b59c1b5c7",
+   "result": null
+  },
+  {
+   "hex": "04ff2d5818d0",
+   "result": null
+  },
+  {
+   "hex": "7c20d516ff2328cd32d0e0d039b7",
+   "result": null
+  },
+  {
+   "hex": "8b362ef3040ed0adf63006bc1ad988fcb50ce5fd9d52",
+   "result": null
+  },
+  {
+   "hex": "ea0ebe0ca1ca40a54c",
+   "result": null
+  },
+  {
+   "hex": "f679aad121c277",
+   "result": null
+  },
+  {
+   "hex": "4a86f75e37ad46e7",
+   "result": null
+  },
+  {
+   "hex": "dbd88a33cb4716e64a6f9dc6",
+   "result": null
+  },
+  {
+   "hex": "cfed09ab",
+   "result": null
+  },
+  {
+   "hex": "2b3ef3aab44a130f289d588e6ef9775e941dd2",
+   "result": null
+  },
+  {
+   "hex": "9a",
+   "result": null
+  },
+  {
+   "hex": "1b19e9d63bb7f1bf0e1874da8bcca2",
+   "result": null
+  },
+  {
+   "hex": "9190977044cdb6e70a1983fc3d08f9a5",
+   "result": null
+  },
+  {
+   "hex": "8d7b123a7e9b1eff277fd13c",
+   "result": null
+  },
+  {
+   "hex": "a0f6001ab72df226c736c543eb077cd17af41cc5",
+   "result": null
+  },
+  {
+   "hex": "49ff81e6bc1908",
+   "result": null
+  },
+  {
+   "hex": "060fdb4ffd77cfba16eda562e3",
+   "result": null
+  },
+  {
+   "hex": "96104c",
+   "result": null
+  },
+  {
+   "hex": "3172",
+   "result": null
+  },
+  {
+   "hex": "0e920204773d383f",
+   "result": null
+  },
+  {
+   "hex": "738ace215a8a683eadac9ac5fd2b3d8880121c2d9e",
+   "result": null
+  },
+  {
+   "hex": "1e404fdae0d01b23f4fd70",
+   "result": null
+  },
+  {
+   "hex": "2a242a3576b6b55df8a37744e26cd3",
+   "result": null
+  },
+  {
+   "hex": "58ab0ea4ef7feaf8e1727d",
+   "result": null
+  },
+  {
+   "hex": "fd75b2",
+   "result": null
+  },
+  {
+   "hex": "696f2f0a6b4e73",
+   "result": null
+  },
+  {
+   "hex": "78264e44ef9e81a7cde891a2",
+   "result": null
+  },
+  {
+   "hex": "4ec4f27a62aae10db5c97d024edbe9b71e89a0",
+   "result": null
+  },
+  {
+   "hex": "65c7",
+   "result": null
+  },
+  {
+   "hex": "9cc6613984fd1bfda62fc6adf3fda8af1f1a35f3",
+   "result": null
+  },
+  {
+   "hex": "1938682772cc01cbeb41319588a0",
+   "result": null
+  },
+  {
+   "hex": "8b663708dca0462689b3",
+   "result": null
+  },
+  {
+   "hex": "cfda589cd83494a429",
+   "result": null
+  },
+  {
+   "hex": "0860c9eee866",
+   "result": null
+  },
+  {
+   "hex": "b1e6",
+   "result": null
+  },
+  {
+   "hex": "af32ebc8313ffebaa030138e9c0b5a2557b07be28e549daf",
+   "result": null
+  },
+  {
+   "hex": "8df526a278",
+   "result": null
+  },
+  {
+   "hex": "412f6b05603e940ba644ed52e89c0e094105bc460bf9",
+   "result": null
+  },
+  {
+   "hex": "824600331599034280e6",
+   "result": null
+  },
+  {
+   "hex": "b304db2f539198c7bd1aeb4786320d267fa89adaaf9930",
+   "result": null
+  },
+  {
+   "hex": "086591c1a7be515828ce7c0f2f7dcb777b",
+   "result": null
+  },
+  {
+   "hex": "af",
+   "result": null
+  },
+  {
+   "hex": "2ff38c331c",
+   "result": null
+  },
+  {
+   "hex": "6ecd2b19b6af816cff725aaf2f5f6f4122e808f3e204715b",
+   "result": null
+  },
+  {
+   "hex": "e956bb4a",
+   "result": null
+  },
+  {
+   "hex": "c826e86e52461b8cd19b1c6757d2e2c6ec1b513640",
+   "result": null
+  },
+  {
+   "hex": "bf3e28c9dda06300a68e49f8a154",
+   "result": null
+  },
+  {
+   "hex": "ccd2fe9b188fc7db1b5b65c7df5ff83c6d566ae56930",
+   "result": null
+  },
+  {
+   "hex": "03e1b093ba1203b4b7390d0defe7b51f9f609c",
+   "result": null
+  },
+  {
+   "hex": "d459920c",
+   "result": null
+  },
+  {
+   "hex": "eeac57441b33d505a2",
+   "result": null
+  },
+  {
+   "hex": "e8db46ebb3f6871d0ba3f16f288c9e254b47d79a8744fb77",
+   "result": null
+  },
+  {
+   "hex": "4e8532b8e420365558eaa72571a8dc262374adf88179c7",
+   "result": null
+  },
+  {
+   "hex": "bbaaf1acf65d8f8e7cfdb1b78e",
+   "result": null
+  },
+  {
+   "hex": "c9e2f0",
+   "result": null
+  },
+  {
+   "hex": "0ea9620935ae3fd338f9ca6a8125319b",
+   "result": null
+  },
+  {
+   "hex": "31ee08e614d7674f57c5bfd26b5d78c52e8953032948",
+   "result": null
+  },
+  {
+   "hex": "741381f6251ca0fb5fbcfa32a481bb4eea11",
+   "result": null
+  },
+  {
+   "hex": "d526127cf792b07b1d10b27d78e9206aeab50bd8399376",
+   "result": null
+  },
+  {
+   "hex": "efacc7",
+   "result": null
+  },
+  {
+   "hex": "df4b",
+   "result": null
+  },
+  {
+   "hex": "0276eb59bea0c5b8f396e59c7c79a516",
+   "result": null
+  },
+  {
+   "hex": "afbfc8f7e00a1e02fe",
+   "result": null
+  },
+  {
+   "hex": "e5b9a8544f353534e2f8714088c4254e8ab6739dc699",
+   "result": null
+  },
+  {
+   "hex": "8882add80540d37f6f24e604284b77fc226d",
+   "result": null
+  },
+  {
+   "hex": "113f3bf8e035308e9c9e2f1ef2cb",
+   "result": null
+  },
+  {
+   "hex": "ced763ac997aea15f6ff245a4659",
+   "result": null
+  },
+  {
+   "hex": "cc88",
+   "result": null
+  },
+  {
+   "hex": "6f14353de6fefa2f6ecab40c0745de5931dfc9a20a8cd9",
+   "result": null
+  },
+  {
+   "hex": "363ed5",
+   "result": null
+  },
+  {
+   "hex": "80b3dc39d25059",
+   "result": null
+  },
+  {
+   "hex": "dabc",
+   "result": null
+  },
+  {
+   "hex": "264a3d5780eb4515e12dfb7cf5",
+   "result": null
+  },
+  {
+   "hex": "f99c123b42b24fb8",
+   "result": null
+  },
+  {
+   "hex": "8ffb94dea678272467debec649dde30298a66941",
+   "result": null
+  },
+  {
+   "hex": "a7429ec16853c8a3902d77",
+   "result": null
+  },
+  {
+   "hex": "f3b7eec2c3789e",
+   "result": null
+  },
+  {
+   "hex": "e03c",
+   "result": null
+  },
+  {
+   "hex": "9fb3e41af34c58242d4737af66d14f3c",
+   "result": null
+  },
+  {
+   "hex": "95196a56eebc70a0839611c4c57f60c474eeb3",
+   "result": null
+  },
+  {
+   "hex": "978130c29ed89c5d2b7512e6",
+   "result": null
+  },
+  {
+   "hex": "396195db84a1af57cc5948196cbd98",
+   "result": null
+  },
+  {
+   "hex": "3e2ff97378a62029c38d",
+   "result": null
+  },
+  {
+   "hex": "12719b3c146fa3cad8293e283bfcd0324d",
+   "result": null
+  },
+  {
+   "hex": "6f34fa6370180249ddd9728bd4098327f53da22bf062e5",
+   "result": null
+  },
+  {
+   "hex": "c58aec2ececf78af051c6f1c3a26b0e7a4685ca191",
+   "result": null
+  },
+  {
+   "hex": "7097",
+   "result": null
+  },
+  {
+   "hex": "00",
+   "result": null
+  },
+  {
+   "hex": "546eb1f51b3cbbbd20",
+   "result": null
+  },
+  {
+   "hex": "8d18015fb8",
+   "result": null
+  },
+  {
+   "hex": "ec",
+   "result": null
+  },
+  {
+   "hex": "9ad156752015c1e30d8616",
+   "result": null
+  },
+  {
+   "hex": "db39136bf0190d0df2b84ad8e04fa86d3976e07151544590",
+   "result": null
+  },
+  {
+   "hex": "94420f5100e1d5a1",
+   "result": null
+  },
+  {
+   "hex": "5a4215b97e3f20786c",
+   "result": null
+  },
+  {
+   "hex": "d87fd9d1f5869856818c44fd90",
+   "result": null
+  },
+  {
+   "hex": "216a89faf39022dfe3d9e06068573373",
+   "result": null
+  },
+  {
+   "hex": "2ffb613be58dbd54a4cf8fdd727f99785c88",
+   "result": null
+  },
+  {
+   "hex": "44ec097d54573efcee994d14c3cee7d6d58f",
+   "result": null
+  },
+  {
+   "hex": "d316fdc9fa665b76a3654cd04a97992ad01643",
+   "result": null
+  },
+  {
+   "hex": "20f7cf876442e4bf660d580be28188325b47",
+   "result": null
+  },
+  {
+   "hex": "d6b9dc666e089d9808",
+   "result": null
+  },
+  {
+   "hex": "965b7bc53bfa19deee3c2f6ff8759565462c8b",
+   "result": null
+  },
+  {
+   "hex": "df9ed4ac3ebfe2886189ff6e9caf5d",
+   "result": null
+  },
+  {
+   "hex": "402f0e234a0d",
+   "result": null
+  },
+  {
+   "hex": "2779a1a63ed46f7e7c0fe531fdc0897cf47e09ecec9cc8",
+   "result": null
+  },
+  {
+   "hex": "91ddd3cf1e6d42",
+   "result": null
+  },
+  {
+   "hex": "6ea4215477afce3a05",
+   "result": null
+  },
+  {
+   "hex": "f8087d2a1d",
+   "result": null
+  },
+  {
+   "hex": "1027939a",
+   "result": null
+  },
+  {
+   "hex": "cb4f4659ce0edea2e9",
+   "result": null
+  },
+  {
+   "hex": "29b75dcc06e9381c5f79f353a82d1d",
+   "result": null
+  },
+  {
+   "hex": "c12b76db456c257731611117fe9544",
+   "result": null
+  },
+  {
+   "hex": "2f04fd31c70663c0da1837fa77084b",
+   "result": null
+  },
+  {
+   "hex": "9dde90c6",
+   "result": null
+  },
+  {
+   "hex": "767f34",
+   "result": null
+  },
+  {
+   "hex": "fa5bb4d3caea1f46e3a6104e23b4e03664212b1543fa1ae4",
+   "result": null
+  },
+  {
+   "hex": "49094315640f1388d4e8e7f16027f606df",
+   "result": null
+  },
+  {
+   "hex": "f777b6ca96c25f",
+   "result": null
+  },
+  {
+   "hex": "685025e6f7baa07511336f6f891efa347e2536b62c92",
+   "result": null
+  },
+  {
+   "hex": "61c161c5a4953a",
+   "result": null
+  },
+  {
+   "hex": "0952142dfd6ea80d4394b1c1b4b18ed9841dfb61ad5a",
+   "result": null
+  },
+  {
+   "hex": "99f143f8fb7e8978e8f97e0df41b",
+   "result": null
+  },
+  {
+   "hex": "67f0b9d62f3730018e39b8228f4c578dbb852fcc137711e7",
+   "result": null
+  },
+  {
+   "hex": "96aae5e7d2d7add52d9983885d6f1a",
+   "result": null
+  },
+  {
+   "hex": "c97058394c4e9babaeac2fef8769",
+   "result": null
+  },
+  {
+   "hex": "fbb16e5d7677d0105d96ee",
+   "result": null
+  },
+  {
+   "hex": "9260ecb813f9cf7943c7e94d6d2fc7c03401345f976fb36e",
+   "result": null
+  },
+  {
+   "hex": "ba7a4444",
+   "result": null
+  },
+  {
+   "hex": "19d21213114829a478d0e1ad63d47763ee95",
+   "result": null
+  },
+  {
+   "hex": "d352622a50",
+   "result": null
+  },
+  {
+   "hex": "a3f31c0e4a8975a4d365a88f6b031e34f24632a279e2bbd3",
+   "result": null
+  },
+  {
+   "hex": "c6f1cd5117aafd05343096a8edbcea1beffb5273",
+   "result": null
+  },
+  {
+   "hex": "14fe57036c2d504f273650a3c1bd",
+   "result": null
+  },
+  {
+   "hex": "9bf8724cbdbcd06c19b54becc328a7c7754332856c452c66",
+   "result": null
+  },
+  {
+   "hex": "066be16e983e6a53260ca2698f477cc7a84c",
+   "result": null
+  }
+ ]
+}

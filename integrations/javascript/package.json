@@ -1,0 +1,20 @@
+{
+  "name": "halow-client",
+  "version": "0.1.0",
+  "description": "Raise ClearZone HaLow wearable alerts through the halow-alert gateway (HTTP) or directly (UDP multicast). No dependencies.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./halow-client.mjs",
+  "exports": "./halow-client.mjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node --check halow-client.mjs && node --check example.mjs",
+    "selftest": "node example.mjs --selftest",
+    "example": "node example.mjs",
+    "example:direct": "node example.mjs --direct"
+  },
+  "dependencies": {}
+}

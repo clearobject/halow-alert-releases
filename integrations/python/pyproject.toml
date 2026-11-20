@@ -1,0 +1,63 @@
+# The Python client as an installable package. The layout stays flat: halow_client.py is
+# the whole package, so copying that one file into a project keeps working.
+#
+#   python -m build integrations/python          sdist and wheel in integrations/python/dist
+#   pip install ./integrations/python            install from a checkout or the unpacked kit
+#
+# The version is single-sourced from halow_client.__version__.
+#
+# setuptools is capped below 77 on purpose. Python 3.8 can only use setuptools 75.3 or older,
+# and those versions accept the license only as a table ({text = "MIT"}). setuptools 77 and
+# newer want an SPDX string instead, and deprecate the table, tool.setuptools.license-files
+# and the license classifier (removal announced for 2027-02-18). The range keeps one
+# configuration that builds the same metadata on Python 3.8 to 3.14, also for
+# "pip install git+...#subdirectory=integrations/python". CI (.github/workflows/checks.yml,
+# job python-package) checks the built METADATA with .github/scripts/check_python_dist.py.
+[build-system]
+requires = ["setuptools>=61,<77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clearobject-halow-client"
+dynamic = ["version"]
+description = "Raise ClearObject ClearZone HaLow wearable alerts through the halow-alert gateway (HTTP) or directly (UDP multicast). Standard library only."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "ClearObject" }]
+keywords = ["halow", "802.11ah", "wi-fi halow", "wearable", "alert", "multicast", "clearzone"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Networking",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/clearobject/halow-alert-releases"
+Documentation = "https://github.com/clearobject/halow-alert-releases/blob/main/integrations/python/README.md"
+Source = "https://github.com/clearobject/halow-alert-releases/tree/main/integrations/python"
+Issues = "https://github.com/clearobject/halow-alert-releases/issues"
+Changelog = "https://github.com/clearobject/halow-alert-releases/blob/main/CHANGELOG.md"
+
+[project.scripts]
+halow-client = "halow_client:main"
+
+[tool.setuptools]
+py-modules = ["halow_client"]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+version = { attr = "halow_client.__version__" }

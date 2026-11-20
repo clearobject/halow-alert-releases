@@ -1,0 +1,4 @@
+# The sdist holds the module, pyproject.toml, README.md and LICENSE. The tests need the
+# repository around them (integrations/testdata, tools/fake_wearable.py), so they stay out.
+# .github/scripts/check_python_dist.py fails the build on any other file.
+prune tests

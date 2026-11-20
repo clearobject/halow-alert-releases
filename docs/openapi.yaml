@@ -1,0 +1,579 @@
+openapi: 3.0.3
+info:
+  title: halow-alert gateway API
+  version: 0.1.0
+  description: |
+    HTTP API of the halow-alert gateway service, which triggers ClearObject ClearZone
+    HaLow wearables through a Morse Micro HaLowLink 2.
+
+    `POST /alert` sends one UDP multicast alert that every wearable on the HaLowLink
+    network receives. The wearables acknowledge over TCP to the gateway, and the
+    gateway asks them for a heartbeat every 15 s; `GET /wearables` reports both.
+    `GET /health` says whether the gateway can send right now.
+
+    Conventions:
+    - Plain HTTP, no TLS. Responses are `HTTP/1.0`, and the connection closes after each one.
+    - Paths are matched exactly: no trailing slash, no query string (otherwise `404`).
+    - Only `GET` and `POST`. Other methods, including `HEAD` and `OPTIONS`, get `501`
+      with an HTML body. No CORS headers.
+    - Request bodies need a `Content-Length` header (chunked bodies are ignored) and
+      may be at most 65536 bytes.
+    - Every JSON error body is `{"error": "<reason>"}`.
+
+    Version 0.1.0 is a pre-release that has not yet been verified with HaLow hardware.
+    Full documentation: https://github.com/clearobject/halow-alert-releases/blob/main/docs/HTTP-API.md
+  contact:
+    name: ClearObject
+    url: https://www.clearobject.com
+  license:
+    name: Proprietary; see LICENSE
+    url: https://github.com/clearobject/halow-alert-releases/blob/main/LICENSE
+externalDocs:
+  description: halow-alert documentation
+  url: https://github.com/clearobject/halow-alert-releases
+servers:
+  - url: http://{gateway}:{port}
+    description: The alert gateway on your network
+    variables:
+      gateway:
+        default: localhost
+        description: Host name or address of the alert gateway.
+      port:
+        default: "8080"
+        description: The port in HALOW_HTTP.
+tags:
+  - name: alerts
+    description: Trigger the wearables.
+  - name: status
+    description: Wearable roster and gateway health.
+paths:
+  /alert:
+    post:
+      tags: [alerts]
+      operationId: sendAlert
+      summary: Alert every wearable on the HaLowLink network
+      description: |
+        Sends one alert (a UDP multicast to 239.255.0.10:5000). The response comes back as
+        soon as the alert is sent, or when its burst ends. It does not wait for the
+        wearables' ACKs; read those from `GET /wearables`.
+
+        The gateway checks, in this order: the path (`404`), the token (`401`),
+        `Content-Length` (`400`), the body size (`413`), the body (`400`), the rate limit
+        (`429`), then sends (`500` if sending fails). Only a `200` uses up the rate limit.
+
+        A `200` means the alert left the gateway, not that a wearable alarmed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        description: Optional. Without a body, or with `{}`, the gateway's defaults apply.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertRequest"
+            examples:
+              defaults:
+                summary: Use the gateway's defaults
+                value: {}
+              label:
+                summary: A label for the log
+                value:
+                  label: zone-3 intrusion
+              burst:
+                summary: Re-send for 1 s to ride out radio loss
+                value:
+                  label: zone-3 intrusion
+                  burst_seconds: 1
+      responses:
+        "200":
+          description: The alert was sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertSent"
+              examples:
+                raw8:
+                  summary: One raw8 alert
+                  value:
+                    event: alert_sent
+                    ts_ms: 1795111196804
+                    source: "http:192.0.2.10:zone-3 intrusion"
+                    format: raw8
+                    group: "239.255.0.10:5000"
+                    egress: 192.168.12.50
+                    datagrams: 1
+                bothBurst:
+                  summary: format both with burst_seconds 1
+                  value:
+                    event: alert_sent
+                    ts_ms: 1795111196804
+                    source: "http:192.0.2.10:"
+                    format: both
+                    group: "239.255.0.10:5000"
+                    egress: 192.168.12.50
+                    datagrams: 20
+        "400":
+          description: The request is malformed. Nothing was sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notJson:
+                  value:
+                    error: body must be JSON
+                notObject:
+                  value:
+                    error: 'body must be a JSON object, for example {"label": "zone-3"}'
+                badFormat:
+                  value:
+                    error: 'format must be "raw8", "proto" or "both"'
+                badBurst:
+                  value:
+                    error: burst_seconds must be a number (0 to 5)
+                badContentLength:
+                  value:
+                    error: bad Content-Length
+                shortBody:
+                  value:
+                    error: body shorter than its Content-Length
+        "401":
+          description: The Authorization header is missing or does not match. Nothing was sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: missing or wrong Bearer token
+        "413":
+          description: The body is over 65536 bytes. Nothing was sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: body too large (at most 65536 bytes)
+        "429":
+          description: |
+            An alert was accepted less than 0.5 s ago (the gateway's --min-gap). Nothing
+            was sent. There is no Retry-After header; wait at least 0.5 s.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: alerts limited to one per 0.5 s
+        "500":
+          description: |
+            Sending failed, usually because the HaLowLink address is not on the gateway
+            right now (HaLowLink unplugged, rebooting or still booting). The gateway
+            recovers by itself; `GET /health` shows the same reason. An unexpected
+            failure has an `error` that starts with `internal error:`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 192.168.12.50 is not an address of this machine (Cannot assign requested address); is the HaLowLink plugged in and the address set? (see docs/NETWORK.md at github.com/clearobject/halow-alert-releases)
+  /wearables:
+    get:
+      tags: [status]
+      operationId: listWearables
+      summary: The wearables that have answered, and their latest replies
+      description: |
+        One entry per wearable address, built from ACKs and from heartbeats (the gateway
+        requests one at start-up and every 15 s). The roster is in memory: it starts empty
+        when the gateway restarts, and a wearable stays listed after it goes quiet. Treat a
+        wearable as offline when `last_seen_ms` is more than 60 s old.
+      security: []
+      responses:
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "200":
+          description: The roster.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wearables"
+              examples:
+                oneWearable:
+                  summary: One wearable, after two heartbeats and one ACK
+                  value:
+                    devices:
+                      - ip: 192.168.12.143
+                        first_seen_ms: 1795111180012
+                        acks: 1
+                        heartbeats: 2
+                        last_seen_ms: 1795111202917
+                        device_id: wz-07
+                        battery_percentage: 87
+                        rssi: -62
+                        uptime_seconds: 3615
+                        app_state: 1
+                        device_state: 2
+                        last_ack_ms: 1795111202917
+                        last_ack_device_ts_ms: 1795111196851
+                    recent:
+                      - event: wearable_heartbeat
+                        ts_ms: 1795111180012
+                        ip: 192.168.12.143
+                        timestamp_ms: 1795111179990
+                        code: HEARTBEAT
+                        heartbeat:
+                          device_id: wz-07
+                          battery_percentage: 87
+                          rssi: -62
+                          uptime_seconds: 3600
+                          app_state: 1
+                          device_state: 2
+                      - event: wearable_heartbeat
+                        ts_ms: 1795111195031
+                        ip: 192.168.12.143
+                        timestamp_ms: 1795111194990
+                        code: HEARTBEAT
+                        heartbeat:
+                          device_id: wz-07
+                          battery_percentage: 87
+                          rssi: -62
+                          uptime_seconds: 3615
+                          app_state: 1
+                          device_state: 2
+                      - event: wearable_ack
+                        ts_ms: 1795111202917
+                        ip: 192.168.12.143
+                        timestamp_ms: 1795111196851
+                        code: ACK
+                        ack_success: true
+                empty:
+                  summary: No wearable has answered yet
+                  value:
+                    devices: []
+                    recent: []
+  /health:
+    get:
+      tags: [status]
+      operationId: getHealth
+      summary: Whether the gateway can send right now
+      description: |
+        `200` when a sending address is present on the gateway and the wearable reply
+        listener (TCP 5001) is running, `503` otherwise. Does not check the wearables.
+        The container's health check calls it.
+      security: []
+      responses:
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "200":
+          description: The gateway can send.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                ok: true
+                version: 0.1.0
+                egress: 192.168.12.50
+                error: null
+                group: "239.255.0.10:5000"
+                format: raw8
+                listener: true
+        "503":
+          description: The gateway cannot send, or cannot receive replies. `error` says why.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                addressMissing:
+                  summary: HALOW_IFACE is set, but the address is not on the host
+                  value:
+                    ok: false
+                    version: 0.1.0
+                    egress: null
+                    error: 192.168.12.50 is not an address of this machine (Cannot assign requested address); is the HaLowLink plugged in and the address set? (see docs/NETWORK.md at github.com/clearobject/halow-alert-releases)
+                    group: "239.255.0.10:5000"
+                    format: raw8
+                    listener: true
+                notOnSubnet:
+                  summary: No HALOW_IFACE, and the host has no 192.168.12.x address
+                  value:
+                    ok: false
+                    version: 0.1.0
+                    egress: null
+                    error: this machine reaches 192.168.12.1 via 192.0.2.23, which is not on the HaLowLink subnet; plug in the HaLowLink (USB-C or LAN port) or pass --iface
+                    group: "239.255.0.10:5000"
+                    format: raw8
+                    listener: true
+                listenerStopped:
+                  summary: The reply listener has stopped
+                  value:
+                    ok: false
+                    version: 0.1.0
+                    egress: 192.168.12.50
+                    error: the wearable response listener stopped; restart the service
+                    group: "239.255.0.10:5000"
+                    format: raw8
+                    listener: false
+  /:
+    get:
+      tags: [status]
+      operationId: getRoot
+      summary: Same as GET /health
+      security: []
+      responses:
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "200":
+          description: The gateway can send.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: The gateway cannot send, or cannot receive replies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+components:
+  responses:
+    NotFound:
+      description: |
+        The path does not match exactly, for example because it has a query string or a
+        trailing slash. GET answers list the endpoints; POST answers name `/alert`.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            get:
+              value:
+                error: GET /health, GET /wearables, POST /alert
+            post:
+              value:
+                error: POST /alert
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        The token the gateway was started with (HALOW_TOKEN), sent as
+        `Authorization: Bearer <token>`. The header must match exactly. A gateway that
+        listens on 127.0.0.1 only may run without a token; then no header is needed, and
+        any program or browser page on that machine can set off the wearables, so keep a
+        token if a browser runs there.
+  schemas:
+    AlertRequest:
+      type: object
+      description: |
+        All fields are optional. A missing or null field gets the gateway's default.
+        Other fields are ignored.
+      properties:
+        label:
+          type: string
+          nullable: true
+          description: |
+            Free text that identifies the alert in the response (`source`) and in the log.
+            The first 200 characters are kept. Other JSON types are converted to text.
+          example: zone-3 intrusion
+        format:
+          type: string
+          nullable: true
+          enum: [raw8, proto, both, null]
+          description: |
+            Alert format, case-insensitive. Default: the gateway's HALOW_FORMAT, normally
+            raw8. Anything else gets 400.
+        burst_seconds:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 5
+          description: |
+            Re-send the identical alert every 100 ms for this many seconds, to ride out
+            radio loss. Default: the gateway's HALOW_BURST_SECONDS, normally 0. The gateway
+            treats values below 0 as 0 and above 5 as 5; a value that is not a number gets 400.
+      additionalProperties: true
+    AlertSent:
+      type: object
+      description: The send record; the same line is written to the gateway's log.
+      required: [event, ts_ms, source, format, group, egress, datagrams]
+      properties:
+        event:
+          type: string
+          enum: [alert_sent]
+        ts_ms:
+          type: integer
+          format: int64
+          description: Send time and the alert's timestamp, in ms since the Unix epoch (gateway clock).
+        source:
+          type: string
+          description: "`http:<caller-ip>:<label>`"
+        format:
+          type: string
+          enum: [raw8, proto, both]
+        group:
+          type: string
+          description: Multicast group and port.
+          example: "239.255.0.10:5000"
+        egress:
+          type: string
+          description: The gateway address the alert left from.
+          example: 192.168.12.50
+        datagrams:
+          type: integer
+          minimum: 1
+          description: Datagrams sent, including burst copies (2 per send for format both).
+    Wearables:
+      type: object
+      required: [devices, recent]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Device"
+        recent:
+          type: array
+          description: The last 50 replies, oldest first.
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/WearableEvent"
+    Device:
+      type: object
+      description: One wearable, keyed by its address. Times are ms since the Unix epoch, gateway clock unless noted.
+      required: [ip, first_seen_ms, last_seen_ms, acks, heartbeats]
+      properties:
+        ip:
+          type: string
+          description: The wearable's address on the HaLowLink network.
+        first_seen_ms:
+          type: integer
+          format: int64
+        last_seen_ms:
+          type: integer
+          format: int64
+        acks:
+          type: integer
+          minimum: 0
+        heartbeats:
+          type: integer
+          minimum: 0
+        last_ack_ms:
+          type: integer
+          format: int64
+          description: When the last ACK arrived. Present after an ACK.
+        last_ack_device_ts_ms:
+          type: integer
+          format: int64
+          description: When the wearable received the alert it last ACKed, by the wearable's clock. Present after an ACK.
+        device_id:
+          type: string
+          description: Present after a heartbeat.
+        battery_percentage:
+          type: integer
+          format: int32
+          description: Percent. Present after a heartbeat.
+        rssi:
+          type: integer
+          format: int32
+          description: Received signal strength in dBm (negative). Present after a heartbeat.
+        uptime_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Present after a heartbeat.
+        app_state:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Numeric firmware state, not interpreted. Present after a heartbeat.
+        device_state:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Numeric firmware state, not interpreted. Present after a heartbeat.
+    WearableEvent:
+      type: object
+      description: One reply from a wearable, as also written to the gateway's log.
+      required: [event, ts_ms, ip, timestamp_ms, code]
+      properties:
+        event:
+          type: string
+          enum: [wearable_ack, wearable_heartbeat]
+        ts_ms:
+          type: integer
+          format: int64
+          description: When the reply arrived at the gateway.
+        ip:
+          type: string
+        timestamp_ms:
+          type: integer
+          format: int64
+          description: |
+            ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat
+            request's timestamp, echoed back (ts_ms minus timestamp_ms is the round-trip time).
+        code:
+          type: string
+          enum: [ACK, HEARTBEAT]
+        ack_success:
+          type: boolean
+          description: ACK only.
+        heartbeat:
+          $ref: "#/components/schemas/Heartbeat"
+    Heartbeat:
+      type: object
+      description: Heartbeat only.
+      required: [device_id, battery_percentage, rssi, uptime_seconds, app_state, device_state]
+      properties:
+        device_id:
+          type: string
+        battery_percentage:
+          type: integer
+          format: int32
+        rssi:
+          type: integer
+          format: int32
+        uptime_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+        app_state:
+          type: integer
+          format: int64
+          minimum: 0
+        device_state:
+          type: integer
+          format: int64
+          minimum: 0
+    Health:
+      type: object
+      required: [ok, version, egress, error, group, format, listener]
+      properties:
+        ok:
+          type: boolean
+          description: true when the status is 200.
+        version:
+          type: string
+          example: 0.1.0
+        egress:
+          type: string
+          nullable: true
+          description: The gateway address alerts leave from, or null when there is none.
+        error:
+          type: string
+          nullable: true
+          description: Why the gateway cannot send or receive, or null.
+        group:
+          type: string
+          example: "239.255.0.10:5000"
+        format:
+          type: string
+          enum: [raw8, proto, both]
+          description: The default alert format.
+        listener:
+          type: boolean
+          description: Whether the wearable reply listener (TCP 5001) is running.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

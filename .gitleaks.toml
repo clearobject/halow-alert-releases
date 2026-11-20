@@ -1,0 +1,62 @@
+# Secret scan configuration (gitleaks v8), used by the "secrets" job in
+# .github/workflows/checks.yml and by the release workflow. This repository is public:
+# the default rules apply, plus rules for personal details that must never be published.
+# There is no allow-list: the docs write tokens as $HALOW_TOKEN or <token>, which the
+# default rules do not match. Do not add rules that list internal names; a rule that
+# names them would publish them.
+title = "halow-alert-releases"
+
+[extend]
+useDefault = true
+
+# Home directory paths name a person. The secret is the user name (group 1), so the
+# default allow-list for file paths does not hide these.
+[[rules]]
+id = "macos-home-path"
+description = "macOS home directory path (contains a user name)"
+regex = '''/Users/([A-Za-z0-9._-]+)'''
+secretGroup = 1
+keywords = ["/users/"]
+
+[[rules]]
+id = "linux-home-path"
+description = "Linux home directory path (contains a user name)"
+regex = '''/home/([A-Za-z0-9._-]+)'''
+secretGroup = 1
+keywords = ["/home/"]
+
+[[rules]]
+id = "windows-home-path"
+description = "Windows home directory path (contains a user name)"
+regex = '''(?i)\b[a-z]:\\Users\\([a-z0-9._-]+)'''
+secretGroup = 1
+keywords = ['\users\']
+
+[[rules]]
+id = "tailnet-hostname"
+description = "Tailscale MagicDNS host name (names a private network host)"
+regex = '''(?i)\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.ts\.net\b'''
+keywords = [".ts.net"]
+
+[[rules]]
+id = "email-address"
+description = "Email address (no personal or staff addresses in this repository)"
+regex = '''\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b'''
+keywords = ["@"]
+
+[[rules]]
+id = "assigned-password"
+description = "Password or Wi-Fi passphrase written in a file"
+regex = '''(?i)\b(?:wpa_passphrase|psk|passphrase|password)\s*[:=]\s*(\S{6,})'''
+secretGroup = 1
+
+[[rules]]
+id = "us-zip-in-address"
+description = "State and ZIP code (postal address)"
+regex = '''\b[A-Z]{2}\s+\d{5}(?:-\d{4})?\b'''
+
+[[rules]]
+id = "user-at-host"
+description = "user@host login target (host names do not belong in this repository)"
+regex = '''[A-Za-z0-9._-]+@[a-z0-9-]+-[0-9]+\b'''
+keywords = ["@"]

@@ -1,0 +1,314 @@
+name: release
+
+# Push a tag vX.Y.Z to publish a GitHub release of this repository with the kit,
+# halow-alert-kit-X.Y.Z.zip, and the Python package clearobject-halow-client (wheel and
+# sdist), each with its SHA-256 file. Before that, this workflow checks that:
+#   - the tag equals the image tag in docker-compose.yml (ghcr.io/clearobject/halow-alert:X.Y.Z)
+#     and __version__ in integrations/python/halow_client.py (the package's version),
+#   - that image is published for linux/amd64 and linux/arm64 (ClearObject publishes it first),
+#   - the secret scan is clean and CHANGELOG.md has a section for X.Y.Z,
+#   - every check in checks.yml passes at the tag, including the end-to-end run of the image
+#     and the Python package on Linux, macOS and Windows.
+# The release is marked as a pre-release while the version is 0.x or has a suffix (X.Y.Z-rc.N,
+# -beta.N or -alpha.N: the PEP 440 pre-release spellings, as the Python package needs them).
+# Optionally, the job pypi then publishes the same wheel and sdist to PyPI; it runs only when
+# the repository variable PUBLISH_PYPI is 'true' (see that job).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPO: ghcr.io/clearobject/halow-alert
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches the kit's image and the Python package, and the image is published
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          ver="${TAG#v}"
+          # The suffix must be one PEP 440 accepts, because the same string is the Python
+          # package's version (setuptools writes 0.2.0-rc.1 as 0.2.0rc1).
+          [[ "$TAG" == v* && "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]] \
+            || fail "tag $TAG is not vX.Y.Z or vX.Y.Z-rc.N / -beta.N / -alpha.N (the Python package version must be PEP 440)"
+          image="$(HALOW_TOKEN=release docker compose -f docker-compose.yml config --images)"
+          [ "$image" = "$IMAGE_REPO:$ver" ] \
+            || fail "docker-compose.yml uses $image, but the tag $TAG needs $IMAGE_REPO:$ver"
+          py="$(python3 integrations/python/halow_client.py --version)"
+          [ "$py" = "$ver" ] \
+            || fail "integrations/python/halow_client.py has __version__ $py (the Python package's version), but the tag $TAG needs $ver"
+          docker manifest inspect "$IMAGE_REPO:$ver" > "$RUNNER_TEMP/manifest.json" \
+            || fail "$IMAGE_REPO:$ver is not published, or not public. Publish the image first, then re-run this workflow."
+          jq -r '.manifests[]?.platform | "\(.os)/\(.architecture)"' "$RUNNER_TEMP/manifest.json" \
+            | sort -u | tee "$RUNNER_TEMP/platforms.txt"
+          for p in linux/amd64 linux/arm64; do
+            grep -qx "$p" "$RUNNER_TEMP/platforms.txt" || fail "$IMAGE_REPO:$ver has no $p image"
+          done
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "release $ver of $IMAGE_REPO:$ver"
+
+      - name: CHANGELOG.md has a section for this version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          grep -qE "^##[[:space:]]+\[?v?${VERSION//./\\.}\]?([[:space:]]|$)" CHANGELOG.md \
+            || { echo "::error file=CHANGELOG.md::no '## [$VERSION]' section"; exit 1; }
+
+      - name: The Python README matches PUBLISH_PYPI
+        # integrations/python/README.md is the package's description on PyPI, and PyPI never
+        # takes a corrected file for a version. Only this README is checked: older CHANGELOG
+        # sections keep their "not published on PyPI" for good (the release job checks this
+        # version's notes).
+        if: vars.PUBLISH_PYPI == 'true'
+        run: |
+          if grep -n -i -E 'not publish[^.]*pypi' integrations/python/README.md; then
+            echo "::error file=integrations/python/README.md::PUBLISH_PYPI is true, but the README (the PyPI description) says the package is not on PyPI"
+            exit 1
+          fi
+
+      - name: Install gitleaks 8.30.1 (checksum pinned)
+        run: |
+          curl -sSfL -o /tmp/gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+      - name: Scan the tree for secrets
+        run: /tmp/gitleaks dir . --config .gitleaks.toml --redact --no-banner
+
+  checks:
+    name: checks
+    needs: verify
+    uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
+
+  release:
+    name: release
+    needs: [verify, checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Build the kit zip
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          name="halow-alert-kit-$VERSION"
+          stage="$RUNNER_TEMP/stage/$name"
+          rm -rf "$RUNNER_TEMP/stage" dist
+          mkdir -p "$stage" dist
+          # Only files tracked by git: never local leftovers, caches or build output.
+          git ls-files -z -- README.md LICENSE CHANGELOG.md SECURITY.md SUPPORT.md \
+              docker-compose.yml .env.example setup-network-linux.sh docs integrations tools data/.keep \
+            | xargs -0 cp --parents -t "$stage"
+          for f in README.md LICENSE CHANGELOG.md docker-compose.yml .env.example setup-network-linux.sh \
+                   data/.keep docs integrations/README.md integrations/LICENSE tools/fake_wearable.py; do
+            [ -e "$stage/$f" ] || fail "$f is missing from the kit"
+          done
+          chmod 755 "$stage/setup-network-linux.sh" "$stage/tools/fake_wearable.py" "$stage/integrations/curl/alert.sh" \
+                    "$stage/integrations/python/halow_client.py" "$stage/integrations/python/example.py"
+          (cd "$RUNNER_TEMP/stage" && zip -r -X -q "$GITHUB_WORKSPACE/dist/$name.zip" "$name")
+          unzip -l "dist/$name.zip"
+          [ "$(unzip -Z1 "dist/$name.zip" | cut -d/ -f1 | sort -u)" = "$name" ] || fail "the zip must hold one top-level folder, $name"
+          [ "$(unzip -Z1 "dist/$name.zip" | grep -c "^$name/data/")" -le 2 ] || fail "data/ in the kit must hold only .keep"
+          (cd dist && sha256sum "$name.zip" > "$name.zip.sha256" && cat "$name.zip.sha256")
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the Python package (sdist and wheel)
+        # The same pinned tools and checks as the python-package job in checks.yml.
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -r .github/requirements-python-build.txt
+          rm -rf "$RUNNER_TEMP/python-dist"
+          python -m build --outdir "$RUNNER_TEMP/python-dist" integrations/python
+          python -m twine check --strict "$RUNNER_TEMP"/python-dist/*
+          python .github/scripts/check_python_dist.py "$RUNNER_TEMP/python-dist" --version "$VERSION"
+          cp "$RUNNER_TEMP"/python-dist/* dist/
+          wheel="$(cd "$RUNNER_TEMP/python-dist" && ls -- *.whl)"
+          sdist="$(cd "$RUNNER_TEMP/python-dist" && ls -- *.tar.gz)"
+          (cd dist && for f in "$wheel" "$sdist"; do sha256sum "$f" > "$f.sha256" && cat "$f.sha256"; done)
+          { echo "PY_WHEEL=$wheel"; echo "PY_SDIST=$sdist"; } >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        # For the optional pypi job: the wheel and the sdist only.
+        with:
+          name: python-release-dist
+          path: ${{ runner.temp }}/python-dist/
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Enable loopback multicast
+        run: |
+          sudo ip link set lo multicast on
+          sudo ip route replace 239.0.0.0/8 dev lo
+
+      - name: Smoke-test the unpacked kit
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          name="halow-alert-kit-$VERSION"
+          rm -rf "$RUNNER_TEMP/kit" && mkdir -p "$RUNNER_TEMP/kit"
+          (cd dist && sha256sum -c "$name.zip.sha256")
+          unzip -q "dist/$name.zip" -d "$RUNNER_TEMP/kit"
+          cd "$RUNNER_TEMP/kit/$name"
+          python3 tools/fake_wearable.py --help > /dev/null
+          bash -n setup-network-linux.sh
+          bash -n integrations/curl/alert.sh
+          test -x setup-network-linux.sh && test -x tools/fake_wearable.py && test -x integrations/curl/alert.sh
+          HALOW_TOKEN=smoke docker compose config --quiet
+          python3 integrations/python/halow_client.py selftest
+          node integrations/javascript/example.mjs --selftest
+          python3 "$GITHUB_WORKSPACE/.github/scripts/check_links.py" . \
+            || echo "::warning::some relative links in the kit point to files that are not in the zip"
+          # The stand-in wearable and the Python direct mode, from the unpacked kit, on loopback.
+          python3 tools/fake_wearable.py --iface 127.0.0.1 --group 239.255.77.3 --port 15100 \
+            --response-port 15101 --seconds 30 > "$RUNNER_TEMP/kit-fake.log" 2>&1 &
+          fake=$!
+          for _ in $(seq 50); do grep -q "fake wearable ready" "$RUNNER_TEMP/kit-fake.log" && break; sleep 0.1; done
+          HALOW_EGRESS=127.0.0.1 HALOW_GROUP=239.255.77.3 HALOW_PORT=15100 HALOW_RESPONSE_PORT=15101 HALOW_ACK_WAIT=5 \
+            python3 -B integrations/python/example.py --direct || { cat "$RUNNER_TEMP/kit-fake.log"; fail "direct mode from the kit failed"; }
+          kill "$fake" 2>/dev/null || true
+
+      - name: Smoke-test the Python package
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          (cd dist && sha256sum -c "$PY_WHEEL.sha256" "$PY_SDIST.sha256")
+          rm -rf "$RUNNER_TEMP/pkg-venv"
+          python -m venv "$RUNNER_TEMP/pkg-venv"
+          "$RUNNER_TEMP/pkg-venv/bin/python" -m pip install --disable-pip-version-check --no-index --no-deps "dist/$PY_WHEEL"
+          cd "$RUNNER_TEMP"
+          got="$("$RUNNER_TEMP/pkg-venv/bin/halow-client" --version)"
+          [ "$got" = "$VERSION" ] || fail "halow-client --version says $got, want $VERSION"
+          "$RUNNER_TEMP/pkg-venv/bin/halow-client" selftest "$RUNNER_TEMP/kit/halow-alert-kit-$VERSION/integrations/testdata/vectors.json"
+          "$RUNNER_TEMP/pkg-venv/bin/python" -c "import halow_client as h; print(h.__version__, h.__file__)"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          set -euo pipefail
+          python3 - "$VERSION" > "$RUNNER_TEMP/notes.md" <<'EOF'
+          import os
+          import re
+          import sys
+
+          ver = sys.argv[1]
+          with open("CHANGELOG.md", encoding="utf-8") as f:
+              text = f.read()
+          # "## [X.Y.Z] - date" (Keep a Changelog) or "## X.Y.Z", up to the next heading
+          # or the link definitions at the end.
+          m = re.search(r"^##[ \t]+\[?v?%s\]?(?:[ \t][^\n]*)?\n(.*?)(?=^##[ \t]|^\[[^\]\n]+\]:[ \t]|\Z)"
+                        % re.escape(ver), text, re.M | re.S)
+          notes = m.group(1).strip() if m else ""
+          if not notes:
+              sys.exit("CHANGELOG.md has no notes for %s" % ver)
+          image = "ghcr.io/clearobject/halow-alert:%s" % ver
+          print(notes)
+          print()
+          print("**Image:** `%s` (linux/amd64, linux/arm64). **Kit:** `halow-alert-kit-%s.zip` below; "
+                "check it with `sha256sum -c halow-alert-kit-%s.zip.sha256`." % (image, ver, ver))
+          wheel, sdist = os.environ["PY_WHEEL"], os.environ["PY_SDIST"]
+          url = "https://github.com/%s/releases/download/%s/%s" % (os.environ["GITHUB_REPOSITORY"],
+                                                                   os.environ["TAG"], wheel)
+          print()
+          print("**Python package** `clearobject-halow-client` (the `halow_client` module and the "
+                "`halow-client` command, Python 3.8 or newer): the wheel `%s` and the sdist `%s` below, "
+                "each with its `.sha256` file. Install it with `python3 -m pip install %s` (Windows: "
+                "`py -m pip install %s`), ideally in a virtual environment." % (wheel, sdist, url, url))
+          EOF
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: The release notes match PUBLISH_PYPI
+        if: vars.PUBLISH_PYPI == 'true'
+        run: |
+          if grep -n -i -E 'not publish[^.]*pypi' "$RUNNER_TEMP/notes.md"; then
+            echo "::error file=CHANGELOG.md::PUBLISH_PYPI is true, but the CHANGELOG.md section for $VERSION says the package is not on PyPI"
+            exit 1
+          fi
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          name="halow-alert-kit-$VERSION"
+          files=("dist/$name.zip" "dist/$name.zip.sha256"
+                 "dist/$PY_WHEEL" "dist/$PY_WHEEL.sha256" "dist/$PY_SDIST" "dist/$PY_SDIST.sha256")
+          for f in "${files[@]}"; do [ -s "$f" ] || { echo "::error::$f is missing"; exit 1; }; done
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "release $TAG exists; replacing its files"
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            pre=()
+            if [[ "$VERSION" == 0.* || "$VERSION" == *-* ]]; then pre=(--prerelease); fi
+            gh release create "$TAG" "${files[@]}" --verify-tag --title "halow-alert $VERSION" \
+              --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}"
+          fi
+
+  pypi:
+    # Optional: publishes the release's wheel and sdist to PyPI with Trusted Publishing (no
+    # token is stored). Off by default: it runs only when the repository variable
+    # PUBLISH_PYPI is 'true'. Publishing claims the name clearobject-halow-client on PyPI,
+    # and PyPI never accepts the same version twice, even after a deletion.
+    # To turn it on: on pypi.org, add a trusted publisher (a "pending" one before the first
+    # upload) with owner clearobject, repository halow-alert-releases, workflow release.yml
+    # and environment pypi; create the environment pypi in this repository's settings
+    # (Settings > Environments); then set the variable PUBLISH_PYPI to true (Settings >
+    # Secrets and variables > Actions > Variables). Before that version's tag, replace the PyPI
+    # paragraph of integrations/python/README.md (the PyPI description), and in that version's
+    # CHANGELOG.md section say it is on PyPI: verify and release refuse a "not published on
+    # PyPI" in either.
+    name: pypi
+    needs: release
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/clearobject-halow-client/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-release-dist
+          path: dist
+      - name: Only the wheel and the sdist
+        run: |
+          set -euo pipefail
+          ls -l dist
+          for f in dist/*; do
+            case "$f" in *.whl|*.tar.gz) ;; *) echo "::error::unexpected file $f"; exit 1 ;; esac
+          done
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
