@@ -109,7 +109,7 @@ node integrations\javascript\example.mjs --direct
 dotnet run --project integrations\csharp -- --direct
 ```
 
-Not yet tested on Windows.
+The CI job `windows-direct` runs these three examples on Windows against the stand-in wearable.
 
 Gateway mode needs a Linux host with Docker Engine. Run the gateway image on loopback with a second stand-in wearable:
 
@@ -141,4 +141,4 @@ All clients put the same bytes on the wire as the gateway. [`testdata/vectors.js
 
 ## Status
 
-Version 0.1.0 is a pre-release. The clients are tested in software only: CI runs every example against the published gateway image and the stand-in wearable on loopback, and installs the Python package from its wheel and tests it on Linux and macOS, and on Windows except direct mode, whose tests may be skipped there (see "Not yet tested on Windows" above). They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 0.1.0 is a pre-release. The clients are tested in software only: CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows, and installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.

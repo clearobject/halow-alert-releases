@@ -142,7 +142,7 @@ halow-client selftest integrations/testdata/vectors.json
 
 ## Try it without hardware
 
-The stand-in wearable, `tools/fake_wearable.py`, answers like a wearable, on loopback and on ports that nothing else uses. It is not part of the package: it is in the kit zip on the [release page](https://github.com/clearobject/halow-alert-releases/releases/tag/v0.1.0) and in [this repository](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/tools/fake_wearable.py). On Linux, enable loopback multicast first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/README.md#try-it-without-hardware) in the integrations overview describes; macOS needs no setup. On Windows, start the stand-in wearable in a window of its own, as the overview shows (direct mode on Windows is not yet tested).
+The stand-in wearable, `tools/fake_wearable.py`, answers like a wearable, on loopback and on ports that nothing else uses. It is not part of the package: it is in the kit zip on the [release page](https://github.com/clearobject/halow-alert-releases/releases/tag/v0.1.0) and in [this repository](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/tools/fake_wearable.py). On Linux, enable loopback multicast first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/README.md#try-it-without-hardware) in the integrations overview describes; macOS needs no setup. On Windows, start the stand-in wearable in a window of its own, as the overview shows.
 
 From the folder that holds `tools/` (the unpacked kit or a clone), with the virtual environment active:
 
