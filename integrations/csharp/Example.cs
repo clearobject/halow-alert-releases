@@ -113,10 +113,10 @@ namespace HalowExample
                 DeviceResponse hb = await replies.WaitForAsync("HEARTBEAT", TimeSpan.FromSeconds(3));
                 if (hb != null)
                 {
-                    WearableHeartbeat h = hb.Heartbeat;
+                    WearableHeartbeat h = hb.Heartbeat;    // null when the reply has no heartbeat payload
                     string rtt = hb.TimestampMs == (ulong)requestTs ? ", round trip " + (hb.ReceivedMs - requestTs) + " ms" : "";
-                    Console.WriteLine("HEARTBEAT from " + hb.Ip + ": device_id=" + h.DeviceId + " battery=" + h.BatteryPercentage
-                        + "% rssi=" + h.Rssi + " dBm" + rtt);
+                    Console.WriteLine("HEARTBEAT from " + hb.Ip + ": " + (h == null ? "no heartbeat payload"
+                        : "device_id=" + h.DeviceId + " battery=" + h.BatteryPercentage + "% rssi=" + h.Rssi + " dBm") + rtt);
                 }
                 else
                 {

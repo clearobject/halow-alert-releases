@@ -141,4 +141,4 @@ All clients put the same bytes on the wire as the gateway. [`testdata/vectors.js
 
 ## Status
 
-Version 1.0.0. The clients are tested in software only: CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows, and installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 1.0.0. The clients are tested in software only: each has its own unit and integration tests (Python `unittest`, JavaScript `node:test`, C# xUnit), which CI runs on Linux and Windows (and the Python tests on macOS too); CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows; and it installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.

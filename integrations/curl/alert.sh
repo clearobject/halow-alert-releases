@@ -45,9 +45,10 @@ if [[ -n ${HALOW_FORMAT:-} ]]; then
   body+=", \"format\": \"$HALOW_FORMAT\""
 fi
 if [[ -n ${HALOW_BURST_SECONDS:-} ]]; then
-  [[ $HALOW_BURST_SECONDS =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "HALOW_BURST_SECONDS must be a number from 0 to 5"
+  # No leading zeros: the value goes into the JSON body as it is, and JSON has no 05.
+  [[ $HALOW_BURST_SECONDS =~ ^(0|[1-9][0-9]*)(\.[0-9]+)?$ ]] || die "HALOW_BURST_SECONDS must be a number from 0 to 5"
   body+=", \"burst_seconds\": $HALOW_BURST_SECONDS"
-  timeout=$((timeout + 5))                # the gateway answers when the burst ends
+  timeout=$((10#$timeout + 5))            # the gateway answers when the burst ends (10#: 08 is not octal)
 fi
 body+="}"
 

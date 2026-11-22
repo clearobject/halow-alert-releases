@@ -36,6 +36,7 @@ class WearableAlerter:
     alert(label) returns at once. After each alert, on_result(label, record, error) runs on
     the background thread: record is the gateway's send record, or None when the alert
     failed, and error is then the exception that says why (usually a halow_client.HalowError).
+    An alert after close() is not sent; on_result reports that at once, on the caller's thread.
     """
 
     RETRY_AFTER_S = 0.6  # the gateway accepts one alert every 0.5 s
@@ -44,16 +45,25 @@ class WearableAlerter:
         self.client = client or hc.GatewayClient()  # HALOW_URL and HALOW_TOKEN
         self.on_result = on_result or print_result
         self._queue = queue.Queue()
+        self._lock = threading.Lock()
+        self._closed = False
         self._thread = threading.Thread(target=self._run, name="wearable-alerter", daemon=True)
         self._thread.start()
 
     def alert(self, label=None):
         """Queue one alert and return at once."""
-        self._queue.put(label)
+        with self._lock:
+            if not self._closed:
+                self._queue.put(label)
+                return
+        self._report(label, None, RuntimeError("the alerter is closed: alert not sent"))
 
     def close(self, timeout=30.0):
         """Send the alerts still queued, then stop the background thread."""
-        self._queue.put(_STOP)
+        with self._lock:
+            if not self._closed:
+                self._closed = True
+                self._queue.put(_STOP)
         self._thread.join(timeout)
 
     def _run(self):
@@ -65,10 +75,13 @@ class WearableAlerter:
                 record, error = self._send(label), None
             except Exception as e:  # any failure goes to the callback; the thread keeps running
                 record, error = None, e
-            try:
-                self.on_result(label, record, error)
-            except Exception as e:
-                print(f"alert_from_your_app: on_result failed: {e!r}", file=sys.stderr)
+            self._report(label, record, error)
+
+    def _report(self, label, record, error):
+        try:
+            self.on_result(label, record, error)
+        except Exception as e:
+            print(f"alert_from_your_app: on_result failed: {e!r}", file=sys.stderr)
 
     def _send(self, label):
         try:

@@ -13,6 +13,7 @@
   "scripts": {
     "check": "node --check halow-client.mjs && node --check example.mjs",
     "selftest": "node example.mjs --selftest",
+    "test": "node --test test/codec.test.mjs test/gateway.test.mjs test/direct.test.mjs test/listener.test.mjs test/example.test.mjs",
     "example": "node example.mjs",
     "example:direct": "node example.mjs --direct"
   },

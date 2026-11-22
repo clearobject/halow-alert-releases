@@ -24,7 +24,7 @@ console.log((await gw.wearables()).devices);                        // ACKs, bat
 
 | Call | Returns |
 |---|---|
-| `new GatewayClient({ url, token, timeoutMs = 10000 })` | A client. `url` defaults to `HALOW_URL`, then `http://127.0.0.1:8080`; `token` defaults to `HALOW_TOKEN`. |
+| `new GatewayClient({ url, token, timeoutMs = 10000 })` | A client. `url` defaults to `HALOW_URL`, then `http://127.0.0.1:8080`; `token` defaults to `HALOW_TOKEN`. `timeoutMs` is the request timeout in milliseconds (an alert's burst adds its length); numeric text such as `'5000'` counts as its number, and anything that is not a number above 0 throws a `RangeError`. |
 | `await .health()` | The `GET /health` body for `200` and `503`. Check `.ok`. |
 | `await .wearables()` | The `GET /wearables` body: `{ devices: [...], recent: [...] }`. |
 | `await .alert({ label, format, burstSeconds })` | The gateway's send record. Rejects with `HalowError` with `.status` (`401`, `429`, `500`, ...) and `.body`, or with `.status` `undefined` when the gateway was not reached. |
@@ -63,3 +63,14 @@ node example.mjs --selftest                                                # cod
 ```
 
 `npm run selftest`, `npm run example` and `npm run example:direct` do the same. `package.json` is marked private and has no dependencies.
+
+## Tests
+
+The tests use Node's built-in test runner (`node:test`, Node.js 18 or newer) and never reach a wearable: gateway mode runs against an HTTP stub on `127.0.0.1`, and direct mode against sockets the tests open themselves on loopback, with their own multicast group and ports.
+
+```bash
+cd integrations/javascript
+npm test
+```
+
+The direct-mode tests need loopback multicast. On Linux, enable it first, as [Try it without hardware](../README.md#try-it-without-hardware) describes; without it they are skipped. `HALOW_TEST_REQUIRE_MULTICAST=1` turns that skip into a failure. Two tests also compare the decoder with the Python client and run the example against [`tools/fake_wearable.py`](../../tools/fake_wearable.py); they are skipped when Python 3.8 or newer is not installed.

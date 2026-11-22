@@ -63,6 +63,18 @@ jobs:
           python integrations/python/example.py --selftest
           node integrations/javascript/example.mjs --selftest
 
+      - name: Enable loopback multicast
+        # 'lo' has no MULTICAST flag on Linux and 239.0.0.0/8 has no route to it.
+        run: |
+          sudo ip link set lo multicast on
+          sudo ip route replace 239.0.0.0/8 dev lo
+      - name: JavaScript tests (node:test, Node.js 24)
+        # The files are listed: node --test treats a folder differently across versions.
+        env:
+          HALOW_TEST_REQUIRE_MULTICAST: "1"
+        run: >-
+          node --test integrations/javascript/test/codec.test.mjs integrations/javascript/test/gateway.test.mjs integrations/javascript/test/direct.test.mjs integrations/javascript/test/listener.test.mjs integrations/javascript/test/example.test.mjs
+
       - name: Shell scripts (bash -n, shellcheck)
         run: |
           bash -n setup-network-linux.sh
@@ -140,6 +152,18 @@ jobs:
           </Project>
           EOF
           dotnet build "$RUNNER_TEMP/netstandard/HalowClient.NetStandard.csproj" -c Release
+      - name: Enable loopback multicast
+        run: |
+          sudo ip link set lo multicast on
+          sudo ip route replace 239.0.0.0/8 dev lo
+      - name: C# tests (xUnit; they run the example built above as a child process)
+        env:
+          HALOW_TEST_REQUIRE_MULTICAST: "1"
+          HALOW_TEST_REQUIRE_EXAMPLE: "1"
+        run: |
+          dotnet restore integrations/csharp/tests
+          dotnet build integrations/csharp/tests -c Release --no-restore
+          dotnet test integrations/csharp/tests -c Release --no-build --blame-hang-timeout 2m
 
   compose:
     name: compose
@@ -492,6 +516,17 @@ jobs:
           dotnet-version: 8.0.x
       - name: Build the C# example
         run: dotnet build integrations/csharp -c Release
+      - name: JavaScript (node:test, Node.js 18) and C# (xUnit) tests on Windows
+        env:
+          HALOW_TEST_REQUIRE_MULTICAST: "1"
+          HALOW_TEST_REQUIRE_EXAMPLE: "1"
+        run: |
+          # The tests set what they need; the job's HALOW_* settings are for the step below.
+          Get-ChildItem Env:HALOW_* | Where-Object { $_.Name -notlike 'HALOW_TEST_*' } | Remove-Item
+          node --test integrations/javascript/test/codec.test.mjs integrations/javascript/test/gateway.test.mjs integrations/javascript/test/direct.test.mjs integrations/javascript/test/listener.test.mjs integrations/javascript/test/example.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "JavaScript tests: exit code $LASTEXITCODE" }
+          dotnet test integrations/csharp/tests -c Release --blame-hang-timeout 2m
+          if ($LASTEXITCODE -ne 0) { throw "C# tests: exit code $LASTEXITCODE" }
       - name: "Direct mode: Python, JavaScript and C# against the stand-in wearable"
         run: |
           $log = Join-Path $env:RUNNER_TEMP 'fake.log'

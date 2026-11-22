@@ -37,6 +37,7 @@ const MIN_INTERVAL_S = 0.02;
 const RESPONSE_DEADLINE_MS = 5000;
 const MAX_RESPONSE_BYTES = 8192;
 const MAX_RESPONSE_CONNS = 32;
+const MAX_TIMER_MS = 2 ** 31 - 1;   // Node timers fire at once for longer delays
 const U32 = 0xffffffffn;
 const U64 = 0xffffffffffffffffn;
 
@@ -202,7 +203,9 @@ export class HalowError extends Error {
 }
 
 /** Client for the halow-alert service: POST /alert, GET /wearables, GET /health.
- *  url defaults to HALOW_URL (else http://127.0.0.1:8080), token to HALOW_TOKEN. */
+ *  url defaults to HALOW_URL (else http://127.0.0.1:8080), token to HALOW_TOKEN.
+ *  timeoutMs is the request timeout in milliseconds; numeric text such as '5000' is taken
+ *  as its number, and anything that is not a number above 0 throws a RangeError. */
 export class GatewayClient {
   constructor({ url, token, timeoutMs = 10000 } = {}) {
     this.url = (url || env('HALOW_URL', DEFAULT_URL)).replace(/\/+$/, '');
@@ -210,7 +213,9 @@ export class GatewayClient {
       throw new TypeError(`gateway URL must start with http:// or https://, not ${JSON.stringify(this.url)}`);
     }
     this.token = (token ?? process.env.HALOW_TOKEN ?? '').trim();
-    this.timeoutMs = timeoutMs;
+    const ms = typeof timeoutMs === 'number' || typeof timeoutMs === 'string' ? Number(timeoutMs) : NaN;
+    if (!(ms > 0)) throw new RangeError('timeoutMs must be a number of milliseconds above 0');
+    this.timeoutMs = ms;   // Infinity is allowed: #call caps it at the timer limit
   }
 
   async #call(method, path, { body, ok = [200], timeoutMs } = {}) {
@@ -224,7 +229,8 @@ export class GatewayClient {
         method,
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs ?? this.timeoutMs),
+        // AbortSignal.timeout takes whole milliseconds only (a burst of 1/3 s makes 10333.33...).
+        signal: AbortSignal.timeout(Math.min(Math.ceil(timeoutMs ?? this.timeoutMs), MAX_TIMER_MS)),
         redirect: 'error',
       });
       text = await res.text();
@@ -266,7 +272,7 @@ export class GatewayClient {
       if (!FORMATS.includes(String(format).toLowerCase())) throw new RangeError('format must be raw8, proto or both');
       body.format = String(format).toLowerCase();
     }
-    let timeoutMs = this.timeoutMs;
+    let timeoutMs = Number(this.timeoutMs);   // a sum, never text joined to a number
     if (burstSeconds !== undefined && burstSeconds !== null) {
       if (!Number.isFinite(burstSeconds) || burstSeconds < 0) throw new RangeError('burstSeconds must be a number from 0 to 5');
       body.burst_seconds = burstSeconds;
@@ -381,7 +387,8 @@ export async function sendHeartbeatRequest({ egress, group = GROUP, port = PORT,
 
 /** '192.168.12.' for 192.168.12.50: replies are accepted from this /24 only. */
 export function subnetPrefix(addr) {
-  return addr.slice(0, addr.lastIndexOf('.') + 1);
+  const i = addr.lastIndexOf('.');
+  return i < 0 ? `${addr}.` : addr.slice(0, i + 1);   // never '', which would accept every address
 }
 
 /** Collect wearable replies on TCP (port 5001): each connection carries one DeviceResponse,
@@ -391,18 +398,37 @@ export function subnetPrefix(addr) {
  *  the gateway service there first. */
 export function listenForResponses({ port = RESPONSE_PORT, host = '0.0.0.0', allowPrefix = '', onResponse } = {}) {
   const responses = [];
-  const waiters = new Set();
+  const waiters = new Set();   // each pending waitFor: w(reply) offers a reply, w(null) gives up
   let active = 0;
+  let closed = false;
+
+  // Says why onResponse failed. It must never throw itself, whatever the value: a Symbol, an
+  // object without a prototype or a revoked Proxy cannot be put in a template string.
+  const report = (e) => {
+    let why = '(a value that cannot be printed)';
+    try {
+      why = String(e?.message ?? e);
+    } catch {
+      try {
+        why = Object.prototype.toString.call(e);
+      } catch {
+        // keep the placeholder
+      }
+    }
+    console.error(`halow-client: onResponse failed: ${why}`);
+  };
 
   const deliver = (r) => {
     responses.push(r);
     if (responses.length > 1000) responses.splice(0, responses.length - 1000);
     for (const w of [...waiters]) w(r);
     if (onResponse) {
+      // Whatever the callback throws, or rejects with when it is async, must not stop the listener.
       try {
-        onResponse(r);
+        const p = onResponse(r);
+        if (typeof p?.then === 'function') p.then(undefined, report);
       } catch (e) {
-        console.error(`halow-client: onResponse failed: ${e.message}`);
+        report(e);
       }
     }
   };
@@ -454,26 +480,28 @@ export function listenForResponses({ port = RESPONSE_PORT, host = '0.0.0.0', all
       resolve({
         responses,
         /** The first reply with this code ('ACK' or 'HEARTBEAT') received at or after afterMs,
-         *  waiting up to timeoutMs; null if none came. */
+         *  waiting up to timeoutMs; null if none came. close() ends the wait with null. */
         waitFor(code = 'ACK', timeoutMs = 10000, afterMs = 0) {
           const match = (r) => r.code === code && r.received_ms >= afterMs;
           const found = responses.find(match);
-          if (found) return Promise.resolve(found);
+          if (found || closed) return Promise.resolve(found ?? null);
           return new Promise((res) => {
-            const t = setTimeout(() => {
-              waiters.delete(w);
-              res(null);
-            }, timeoutMs);
             const w = (r) => {
-              if (!match(r)) return;
+              if (r !== null && !match(r)) return;
               clearTimeout(t);
               waiters.delete(w);
               res(r);
             };
+            const t = setTimeout(() => w(null), Math.min(timeoutMs, MAX_TIMER_MS));   // Infinity: wait (almost) forever, not 1 ms
             waiters.add(w);
           });
         },
+        /** Stops listening. Pending waitFor calls resolve with null at once, so no timer of
+         *  theirs keeps the program running; replies on connections already open are still
+         *  read. Resolves once those connections are done. */
         close() {
+          closed = true;
+          for (const w of [...waiters]) w(null);
           return new Promise((res) => server.close(() => res()));
         },
       });

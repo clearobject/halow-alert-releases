@@ -50,7 +50,7 @@ using (var replies = new HalowResponseListener(5001, HalowDirect.SubnetPrefix(eg
 |---|---|
 | `HalowDirect.SendAlertAsync(egress, format = "raw8", group = "239.255.0.10", port = 5000, ttl = 4, burstSeconds = 0, burstIntervalMs = 100)` | Sends one alert (`raw8`, `proto` or `both`). `burstSeconds` resends the same bytes for that long (at most 5 s). Throws `InvalidOperationException` when `egress` is not an address of this machine. |
 | `HalowDirect.SendHeartbeatRequest(egress, group = "239.255.0.10", port = 5000, ttl = 4)` | Asks every wearable to report in. Nothing buzzes. Returns the request's timestamp (ms), which each heartbeat echoes. |
-| `new HalowResponseListener(port = 5001, allowPrefix = "")`, `.Start()`, `.Stop()` | Listens for replies. `Responses` holds them, `WaitForAsync(code, timeout, afterMs)` waits for one, and the `Received` event fires for each one. Throws `InvalidOperationException` when the port is taken. |
+| `new HalowResponseListener(port = 5001, allowPrefix = "")`, `.Start()`, `.Stop()` | Listens for replies. `Responses` holds them, `WaitForAsync(code, timeout, afterMs)` waits for one, and the `Received` event fires for each one. Throws `InvalidOperationException` when the port is taken. `Start()` on a listener that is already listening does nothing; after `Stop()` it listens again. |
 | `HalowWire.EncodeRaw8`, `EncodeGatewayMessage`, `DecodeDeviceResponse` | The wire formats. |
 
 ## Run the example (.NET 8 SDK or newer)
@@ -97,3 +97,14 @@ CI compiles `HalowClient.cs` against .NET Standard 2.1 with C# 8. It has not bee
    - **WebGL** runs in a browser: it has no sockets, so direct mode is impossible, and it cannot call the gateway either, because the gateway sends no CORS headers (its answer to the browser's `OPTIONS` preflight is `501`). Send the alert from a small backend that holds the token, served from the same origin as the WebGL page or sending CORS headers itself, and call that backend from Unity with `UnityWebRequest`. Never put the token in a WebGL build.
    - **Android and iOS** block plain-HTTP requests by default. Allow HTTP to the gateway (Player Settings → Allow downloads over HTTP, and an App Transport Security exception on iOS). iOS 14 and newer also asks the user for local network access, and sending multicast (direct mode) needs Apple's multicast networking entitlement.
    - **Desktop players and the Editor** may trigger the operating system's firewall prompt the first time they listen on TCP 5001. Allow it, or no ACKs arrive.
+
+## Tests
+
+The tests in [`tests/`](tests/) use xUnit and never reach a wearable: gateway mode runs against an HTTP stub on `127.0.0.1`, and direct mode against sockets the tests open themselves on loopback, with their own multicast group and ports. Some run the example as a child process, so build it first:
+
+```bash
+dotnet build integrations/csharp -c Release
+dotnet test integrations/csharp/tests -c Release
+```
+
+The direct-mode tests need loopback multicast. On Linux, enable it first, as [Try it without hardware](../README.md#try-it-without-hardware) describes; without it they are skipped. `HALOW_TEST_REQUIRE_MULTICAST=1` turns that skip into a failure, and `HALOW_TEST_REQUIRE_EXAMPLE=1` does the same for the example's tests when it is not built.

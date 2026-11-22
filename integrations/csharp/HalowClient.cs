@@ -340,7 +340,12 @@ namespace ClearObject.Halow
             if (!BaseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
                 && !BaseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("gateway URL must start with http:// or https://, not \"" + BaseUrl + "\"");
+            Uri parsed;
+            if (!Uri.TryCreate(BaseUrl + "/", UriKind.Absolute, out parsed) || parsed.Host.Length == 0)
+                throw new ArgumentException("gateway URL is not a valid URL: \"" + BaseUrl + "\"");
             this.token = (token ?? Environment.GetEnvironmentVariable("HALOW_TOKEN") ?? "").Trim();
+            if (this.token.IndexOf('\r') >= 0 || this.token.IndexOf('\n') >= 0)
+                throw new ArgumentException("the token must not contain line breaks");
             RequestTimeout = timeout ?? TimeSpan.FromSeconds(10);
             http = new HttpClient(new HttpClientHandler { UseProxy = false, AllowAutoRedirect = false })
             {
@@ -389,7 +394,8 @@ namespace ClearObject.Halow
                 if (double.IsNaN(b) || double.IsInfinity(b) || b < 0)
                     throw new ArgumentException("burstSeconds must be a number from 0 to 5");
                 parts.Add("\"burst_seconds\": " + b.ToString("R", CultureInfo.InvariantCulture));
-                timeout += TimeSpan.FromSeconds(Math.Min(b, HalowDefaults.MaxBurstSeconds));   // answered when the burst ends
+                if (timeout != System.Threading.Timeout.InfiniteTimeSpan)      // infinite stays infinite
+                    timeout += TimeSpan.FromSeconds(Math.Min(b, HalowDefaults.MaxBurstSeconds));   // answered when the burst ends
             }
             return SendAsync(HttpMethod.Post, "/alert", "{" + string.Join(", ", parts) + "}", new[] { 200 }, timeout,
                 cancellationToken);
@@ -418,7 +424,8 @@ namespace ClearObject.Halow
                     using (HttpResponseMessage res = await http.SendAsync(req, cts.Token).ConfigureAwait(false))
                     {
                         status = (int)res.StatusCode;
-                        text = await res.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        // The gateway's JSON is UTF-8; an unknown charset in Content-Type must not fail the call.
+                        text = Encoding.UTF8.GetString(await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false));
                     }
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -603,7 +610,10 @@ namespace ClearObject.Halow
         /// <summary>"192.168.12." for 192.168.12.50: replies are accepted from this /24 only.</summary>
         public static string SubnetPrefix(string address)
         {
-            return address.Substring(0, address.LastIndexOf('.') + 1);
+            if (address == null) throw new ArgumentNullException(nameof(address));
+            int dot = address.LastIndexOf('.');
+            // No dot: a prefix that no peer address has, never "" (which would accept every peer).
+            return dot < 0 ? address + "." : address.Substring(0, dot + 1);
         }
 
         // A UDP socket bound to egress that sends multicast from it (IP_MULTICAST_IF).
@@ -644,7 +654,8 @@ namespace ClearObject.Halow
         private readonly object gate = new object();
         private readonly List<DeviceResponse> responses = new List<DeviceResponse>();
         private readonly SemaphoreSlim slots = new SemaphoreSlim(HalowDefaults.MaxResponseConnections, HalowDefaults.MaxResponseConnections);
-        private volatile bool stopped;
+        private bool listening;         // under gate: set when listener.Start succeeds, cleared by Stop
+        private volatile int run;       // changed under gate by every Start and Stop; an accept loop ends once it changes
 
         /// <param name="port">TCP port (default 5001).</param>
         /// <param name="allowPrefix">Accept only peers whose address starts with this, for example "192.168.12."; "" accepts all.</param>
@@ -667,33 +678,49 @@ namespace ClearObject.Halow
             }
         }
 
+        /// <summary>
+        /// Starts listening and returns this listener. Calling Start() again while it is listening
+        /// does nothing and returns this listener, on every platform. After Stop() it listens again
+        /// on the same port. Throws InvalidOperationException when the port cannot be taken.
+        /// </summary>
         public HalowResponseListener Start()
         {
-            try
+            lock (gate)
             {
-                // On Windows another process could otherwise bind the same port and take half of the replies.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) listener.ExclusiveAddressUse = true;
-                listener.Start(32);
+                if (listening) return this;
+                try
+                {
+                    // On Windows another process could otherwise bind the same port and take half of the replies.
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) listener.ExclusiveAddressUse = true;
+                    listener.Start(32);
+                }
+                catch (SocketException e)
+                {
+                    throw new InvalidOperationException("cannot listen on TCP " + port + " for wearable replies: " + e.Message
+                        + " (is the gateway service or another listener running on this machine?)", e);
+                }
+                listening = true;
+                int current = ++run;    // an accept loop left over from before a Stop() sees the change and ends
+                Task.Run(() => AcceptLoopAsync(current));
             }
-            catch (SocketException e)
-            {
-                throw new InvalidOperationException("cannot listen on TCP " + port + " for wearable replies: " + e.Message
-                    + " (is the gateway service or another listener running on this machine?)", e);
-            }
-            Task.Run(() => AcceptLoopAsync());
             return this;
         }
 
+        /// <summary>Stops listening; Responses keeps the replies received so far. Start() listens again.</summary>
         public void Stop()
         {
-            stopped = true;
-            try
+            lock (gate)
             {
-                listener.Stop();
-            }
-            catch (SocketException)
-            {
-                // already stopped
+                listening = false;
+                run++;
+                try
+                {
+                    listener.Stop();
+                }
+                catch (SocketException)
+                {
+                    // already stopped
+                }
             }
         }
 
@@ -704,7 +731,7 @@ namespace ClearObject.Halow
 
         /// <summary>
         /// The first reply with this code ("ACK" or "HEARTBEAT") received at or after afterMs
-        /// (Unix ms), waiting up to timeout; null if none came.
+        /// (Unix ms), waiting up to timeout (Timeout.InfiniteTimeSpan: no limit); null if none came.
         /// </summary>
         public async Task<DeviceResponse> WaitForAsync(string code, TimeSpan timeout, long afterMs = 0,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -717,14 +744,14 @@ namespace ClearObject.Halow
                     foreach (DeviceResponse r in responses)
                         if (r.Code == code && r.ReceivedMs >= afterMs) return r;
                 }
-                if (clock.Elapsed >= timeout) return null;
+                if (timeout != System.Threading.Timeout.InfiniteTimeSpan && clock.Elapsed >= timeout) return null;
                 await Task.Delay(50, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private async Task AcceptLoopAsync()
+        private async Task AcceptLoopAsync(int current)
         {
-            while (!stopped)
+            while (run == current)
             {
                 TcpClient client;
                 try
@@ -739,9 +766,12 @@ namespace ClearObject.Halow
                 {
                     return;
                 }
-                catch (SocketException)
+                catch (SocketException e)
                 {
-                    if (stopped) return;
+                    if (run != current) return;
+                    // One connection failed before it was accepted (Windows reports a peer's reset
+                    // this way): take the next one at once.
+                    if (e.SocketErrorCode == SocketError.ConnectionReset || e.SocketErrorCode == SocketError.ConnectionAborted) continue;
                     await Task.Delay(500).ConfigureAwait(false);    // EMFILE and the like: wait, keep listening
                     continue;
                 }
@@ -820,13 +850,16 @@ namespace ClearObject.Halow
                 Action<DeviceResponse> handler = Received;
                 if (handler != null)
                 {
-                    try
+                    foreach (Delegate subscriber in handler.GetInvocationList())
                     {
-                        handler(r);
-                    }
-                    catch (Exception)
-                    {
-                        // a subscriber's error must not stop the listener
+                        try
+                        {
+                            ((Action<DeviceResponse>)subscriber)(r);
+                        }
+                        catch (Exception)
+                        {
+                            // a subscriber's error must not stop the listener or the other subscribers
+                        }
                     }
                 }
             }
