@@ -18,6 +18,8 @@
     <Version>1.0.0</Version>
     <InvariantGlobalization>true</InvariantGlobalization>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- The test project in tests/ builds on its own; keep its files out of the example. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
   </PropertyGroup>
 
 </Project>

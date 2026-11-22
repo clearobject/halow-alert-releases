@@ -43,6 +43,7 @@ GatewayClient("http://<gateway>:8080", token="<token>").alert(label="zone-3 intr
 - Python package `clearobject-halow-client` 1.0.0: the Python client's `halow_client` module and the `halow-client` command, for Python 3.8 or newer, with no dependencies. The GitHub release attaches it as a wheel and an sdist, each with a SHA-256 file. It can also be installed with pip straight from this repository (`git+https://github.com/clearobject/halow-alert-releases@v1.0.0#subdirectory=integrations/python`). It is not published on PyPI.
 - Python examples: `example.py` (one alert, then wait for the ACK, through the gateway or directly), `examples/alert_from_your_app.py` (alerts from inside a program loop, on a background thread, with a retry on `429`) and `examples/wearable_status.py` (a check before a session: can the gateway send, and which wearables answer).
 - `tools/fake_wearable.py`: a standalone stand-in wearable, for developing without hardware.
+- Tests for every client, in the kit and the repository: Python (`unittest`), JavaScript (`node:test`) and C# (xUnit), with seeded fuzzing of the reply decoder and loopback tests of direct mode, and tests of `integrations/curl/alert.sh`. None of them reaches a wearable.
 - Documentation: overview and quick starts, alerting architecture, network setup for Linux, macOS and Windows, HTTP API reference with an OpenAPI 3.0.3 description, wire protocol, troubleshooting, and the security and support policies.
 
 ### Security
@@ -51,6 +52,7 @@ GatewayClient("http://<gateway>:8080", token="<token>").alert(label="zone-3 intr
 - Wearable replies are accepted only from the HaLowLink network, `192.168.12.0/24`.
 - Limits: request bodies up to 64 KiB, 64 simultaneous HTTP connections, idle HTTP clients dropped after 10 s, 32 wearable replies in flight, each read for at most 5 s and 8 KiB.
 - The container runs as a non-root user.
+- The Python, JavaScript and C# clients and `alert.sh` never follow a redirect, so the token is sent only to the gateway address you configured.
 
 ### Known limitations
 

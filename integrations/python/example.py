@@ -76,10 +76,13 @@ def direct(wait_s: float) -> int:
         req_ts = hc.send_heartbeat_request(egress, group, port)
         hb = replies.wait_for("HEARTBEAT", timeout=3.0)
         if hb:
-            h = hb["heartbeat"]
+            h = hb.get("heartbeat")      # missing when the reply carries no heartbeat payload
             rtt = f", round trip {hb['received_ms'] - req_ts} ms" if hb["timestamp_ms"] == req_ts else ""
-            print(f"HEARTBEAT from {hb['ip']}: device_id={h['device_id']} battery={h['battery_percentage']}% "
-                  f"rssi={h['rssi']} dBm{rtt}")
+            if h:
+                print(f"HEARTBEAT from {hb['ip']}: device_id={h['device_id']} battery={h['battery_percentage']}% "
+                      f"rssi={h['rssi']} dBm{rtt}")
+            else:
+                print(f"HEARTBEAT from {hb['ip']}: no heartbeat payload{rtt}")
         else:
             print("no heartbeat within 3 s (continuing)")
 

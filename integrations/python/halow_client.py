@@ -43,6 +43,9 @@ leave out. The group, the port and the reply port are arguments (defaults above)
 from __future__ import annotations
 
 import argparse
+import contextlib
+import errno
+import http.client
 import json
 import math
 import os
@@ -89,6 +92,8 @@ def _env_port(name: str, default: int) -> int:
 # Wire formats (byte-identical to the gateway's halow_alert.py; see docs/PROTOCOL.md)
 # --------------------------------------------------------------------------- #
 def _varint(n: int) -> bytes:
+    if n < 0:      # a negative number would never end the loop below
+        raise ValueError("varint must not be negative")
     out = bytearray()
     while True:
         b, n = n & 0x7F, n >> 7
@@ -207,11 +212,20 @@ _STATUS_HINTS = {
 }
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """The gateway never redirects. A 3xx answer is an error: following it would turn
+    POST /alert into a GET and carry the token to another address."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 class GatewayClient:
     """Client for the halow-alert service: POST /alert, GET /wearables, GET /health.
 
     url defaults to HALOW_URL (else http://127.0.0.1:8080); token to HALOW_TOKEN.
-    Proxy settings from the environment are ignored: the gateway is on your local network."""
+    Proxy settings from the environment are ignored: the gateway is on your local network.
+    Redirects are not followed."""
 
     def __init__(self, url=None, token=None, timeout: float = 10.0):
         self.url = (url or _env("HALOW_URL", DEFAULT_URL)).rstrip("/")
@@ -219,7 +233,9 @@ class GatewayClient:
             raise ValueError(f"gateway URL must start with http:// or https://, not {self.url!r}")
         self.token = (os.environ.get("HALOW_TOKEN", "") if token is None else token).strip()
         self.timeout = float(timeout)
-        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        if not (math.isfinite(self.timeout) and self.timeout > 0):
+            raise ValueError("timeout must be a number of seconds above 0")
+        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
     def _call(self, method: str, path: str, body=None, ok=(200,), timeout=None):
         data = None if body is None else json.dumps(body).encode("utf-8")
@@ -236,15 +252,18 @@ class GatewayClient:
             status = e.code
             try:
                 raw = e.read()
-            except OSError:
+            except (OSError, http.client.HTTPException):
                 raw = b""
         except urllib.error.URLError as e:
             raise HalowError(f"cannot reach the gateway at {self.url}: {e.reason}") from None
         except (OSError, ValueError) as e:      # timeout, reset, bad URL
             raise HalowError(f"cannot reach the gateway at {self.url}: {e}") from None
+        except http.client.HTTPException as e:  # not an HTTP answer, cut short, bad port in the URL
+            raise HalowError(f"cannot reach the gateway at {self.url}: {type(e).__name__}: "
+                             f"{str(e).strip()[:200]}") from None
         try:
             parsed = json.loads(raw.decode("utf-8")) if raw.strip() else {}
-        except ValueError:
+        except (ValueError, RecursionError):    # not JSON, or nested too deeply to decode
             parsed = {"error": raw.decode("utf-8", "replace")[:500]}
         if not isinstance(parsed, dict):
             parsed = {"value": parsed}
@@ -328,6 +347,10 @@ def send_direct(egress: str = "", fmt: str = "raw8", group: str = GROUP, port: i
     fmt = (fmt or "raw8").lower()
     if fmt not in FORMATS:
         raise ValueError("fmt must be raw8, proto or both")
+    # Checked before anything is sent: a bad burst argument must not fail after the alert went out.
+    # burst_interval_ms is used, and so checked, only when there is a burst (NaN is no burst).
+    burst = min(max(float(burst_seconds), 0.0), MAX_BURST_S)
+    interval = max(MIN_INTERVAL_S, burst_interval_ms / 1000.0) if burst > 0 else MIN_INTERVAL_S
     s = _mcast_socket(egress, ttl)
     now = time.time()
     start = time.monotonic()
@@ -341,9 +364,7 @@ def send_direct(egress: str = "", fmt: str = "raw8", group: str = GROUP, port: i
         for p in payloads:
             s.sendto(p, (group, port))
             sent += 1
-        burst = min(max(float(burst_seconds), 0.0), MAX_BURST_S)
-        if burst:
-            interval = max(MIN_INTERVAL_S, burst_interval_ms / 1000.0)
+        if burst > 0:
             end = start + burst
             while time.monotonic() + interval < end:
                 time.sleep(interval)
@@ -374,13 +395,16 @@ def subnet_prefix(addr: str) -> str:
     return addr.rsplit(".", 1)[0] + "."
 
 
-def _exclusive_port(s: socket.socket) -> None:
+def _exclusive_port(s: socket.socket) -> bool:
     """Own the reply port: SO_EXCLUSIVEADDRUSE on Windows (SO_REUSEADDR there would let a
-    second process share it); SO_REUSEADDR on POSIX, which only allows a quick rebind."""
+    second process share it); SO_REUSEADDR on POSIX, which only allows a quick rebind.
+    True when the port is owned exclusively (Windows)."""
     if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-    elif os.name == "posix":
+        return True
+    if os.name == "posix":
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    return False
 
 
 class ResponseListener:
@@ -404,26 +428,47 @@ class ResponseListener:
         self._stop = threading.Event()
         self._slots = threading.BoundedSemaphore(MAX_RESPONSE_CONNS)
         self._srv = None
+        self._thread = None
 
     def start(self) -> ResponseListener:
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        exclusive = False
         try:
-            _exclusive_port(srv)
+            exclusive = _exclusive_port(srv)
             srv.bind((self.bind, self.port))
             srv.listen(32)
         except OSError as e:
             srv.close()
+            hint = "is the gateway service or another listener running on this machine?"
+            if exclusive:
+                hint += (" On Windows the port can also stay taken for up to a few minutes after a listener "
+                         "on it stopped, until the reply connections it had have fully closed")
             raise OSError(f"cannot listen on TCP {self.port} for wearable replies: {e.strerror or e} "
-                          f"(is the gateway service or another listener running on this machine?)") from None
-        srv.settimeout(0.5)
+                          f"({hint})") from None
+        srv.settimeout(0.2)              # how long stop() may wait for the accept loop to notice
         self._srv = srv
-        threading.Thread(target=self._loop, daemon=True, name="halow-replies").start()
+        self._stop.clear()               # a stopped listener can be started again
+        self._thread = threading.Thread(target=self._loop, daemon=True, name="halow-replies")
+        self._thread.start()
         return self
 
     def stop(self) -> None:
+        """Stop listening. Replies that are already being read are still read.
+
+        On Linux and macOS the port is free to listen on again when this returns. On Windows
+        it can stay taken until the reply connections that were open at stop() have ended,
+        and, after one that the listener cut off itself (at the deadline or a limit), for up
+        to a few minutes more."""
         self._stop.set()
         if self._srv is not None:
+            with contextlib.suppress(OSError):
+                self._srv.shutdown(socket.SHUT_RDWR)   # wakes a waiting accept on Linux
             self._srv.close()
+        # The accept loop may still be waiting on the socket, which keeps the port taken
+        # until it returns (at most the accept timeout above).
+        t = self._thread
+        if t is not None and t is not threading.current_thread():
+            t.join(5)
 
     def __enter__(self):
         return self.start()
@@ -437,10 +482,16 @@ class ResponseListener:
                 conn, addr = self._srv.accept()
             except socket.timeout:
                 continue
-            except OSError:
+            except (ConnectionResetError, ConnectionAbortedError):
+                # A client that went away before it was accepted (Windows reports these). Only
+                # that connection is lost: take the next one at once.
+                continue
+            except OSError as e:
                 if self._stop.is_set():
                     return
-                time.sleep(0.5)
+                if e.errno == errno.EPROTO:     # Linux: a protocol error on that one connection
+                    continue
+                time.sleep(0.5)     # the listener itself is in trouble (out of file descriptors, ...)
                 continue
             if self.allow_prefix and not addr[0].startswith(self.allow_prefix):
                 conn.close()
