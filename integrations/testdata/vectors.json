@@ -1,5 +1,5 @@
 {
- "about": "Test vectors for the integrations' codecs, produced by the gateway's own encoder and decoder (halow-alert 0.1.0). raw8 and gateway_message: input -> bytes (hex). device_response: bytes (hex) -> decoded reply, or null when the bytes are rejected. Integers are written as decimal strings so 64-bit values survive JSON.",
+ "about": "Test vectors for the integrations' codecs, produced by the gateway's own encoder and decoder (halow-alert 1.0.0). raw8 and gateway_message: input -> bytes (hex). device_response: bytes (hex) -> decoded reply, or null when the bytes are rejected. Integers are written as decimal strings so 64-bit values survive JSON.",
  "raw8": [
   {
    "seconds": 1767225600.123,

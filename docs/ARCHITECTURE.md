@@ -246,7 +246,7 @@ Example lines:
 
 From these you can measure the **ACK delay** (`ts_ms` of `wearable_ack` minus `ts_ms` of `alert_sent`: the alarm sequence plus the network) and, if the wearable's clock agrees with the gateway's, the **delivery latency** (`timestamp_ms` of `wearable_ack` minus `ts_ms` of `alert_sent`: the radio path).
 
-**The container output** (`docker compose logs`):
+**The container output** (`docker logs halow-alert`, or `docker compose logs` with the Compose kit):
 
 - standard output: the start-up line (listen address, token required or not, group, sending address), one line per ACK and heartbeat (`--quiet` turns these off), and a `WARNING` at start-up when the HaLowLink address is missing;
 - standard error: one access line per HTTP request, such as `http 192.0.2.10 "POST /alert HTTP/1.1" 200 -` (also turned off by `--quiet`), and errors such as `heartbeat request failed: ...`.

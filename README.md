@@ -75,7 +75,7 @@ docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
 HALOW_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))'); echo "token: $HALOW_TOKEN"
 
 docker run -d --name halow-alert --restart unless-stopped --network host \
-  -e HALOW_TOKEN="$HALOW_TOKEN" -e HALOW_IFACE=192.168.12.50 \
+  -e HALOW_TOKEN="${HALOW_TOKEN:?make the token first}" -e HALOW_IFACE=192.168.12.50 \
   -v halow-alert-data:/data \
   ghcr.io/clearobject/halow-alert:1.0.0
 ```
@@ -89,7 +89,7 @@ That one `docker run` is the whole service. `--restart unless-stopped` restarts 
 | Show the token again | `docker exec halow-alert printenv HALOW_TOKEN` |
 | Read the log of alerts, ACKs and heartbeats | `docker exec halow-alert tail -n 20 /data/halow-alert.jsonl` |
 | Stop it, start it again | `docker stop halow-alert`, `docker start halow-alert` |
-| Change a setting, or move to a new version | `docker rm -f halow-alert`, then the `docker run` above with the new setting or image tag. The log volume stays. |
+| Change a setting, or move to a new version | Keep the token, `HALOW_TOKEN=$(docker exec halow-alert printenv HALOW_TOKEN)`, then `docker rm -f halow-alert`, then the `docker run` above (not the line that makes a new token) with the new setting or image tag. The log volume stays. |
 | Remove it | `docker rm -f halow-alert && docker volume rm halow-alert-data` |
 
 The settings are environment variables (`-e NAME=value`), listed in the [HTTP API reference](docs/HTTP-API.md#service-settings).
@@ -105,7 +105,7 @@ grep HALOW_TOKEN .env    # the token: give it to the machines that call the API
 
 Compose runs the container as uid and gid 1000 (the first user on Ubuntu, Jetson and Raspberry Pi OS) so that it can write to `./data`. If `id -u` or `id -g` print something else, add `HALOW_UID=<uid>` and `HALOW_GID=<gid>` to `.env`, as [`.env.example`](.env.example) shows. Keep `.env` out of version control and shared documents.
 
-**Trigger an alert** from any machine that can reach the gateway. First set the token from the gateway's `.env` there (`export HALOW_TOKEN=<token>`; in PowerShell `$env:HALOW_TOKEN='<token>'`):
+**Trigger an alert** from any machine that can reach the gateway. First set the token there (the one step 3 printed; on the gateway, `docker exec halow-alert printenv HALOW_TOKEN` shows it, or `grep HALOW_TOKEN .env` with Compose): `export HALOW_TOKEN=<token>`, in PowerShell `$env:HALOW_TOKEN='<token>'`.
 
 ```bash
 curl -X POST http://<gateway>:8080/alert \
