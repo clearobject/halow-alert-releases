@@ -70,7 +70,7 @@ docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 <command> [
 
 Every command also takes `--iface`, `--router`, `--group`, `--port`, `--response-port` and `--log`, which work like the [service settings](HTTP-API.md#service-settings) of the same name.
 
-`wearables` and `send` listen on TCP 5001 for replies, which the running gateway service already holds. Either stop the service first (`docker compose stop`, then `docker compose start` afterwards), or use the service's `GET /wearables` instead. While the service runs, `send` still sends but prints `not listening for ACKs: TCP 5001 is taken`, and `wearables` exits with `cannot listen for replies`.
+`wearables` and `send` listen on TCP 5001 for replies, which the running gateway service already holds. Either stop the service first (`docker stop halow-alert`, then `docker start halow-alert` afterwards; with Compose, `docker compose stop` and `docker compose start`), or use the service's `GET /wearables` instead. While the service runs, `send` still sends but prints `not listening for ACKs: TCP 5001 is taken`, and `wearables` exits with `cannot listen for replies`.
 
 Example output of `send --wait-acks 30` with one wearable:
 
@@ -102,12 +102,12 @@ A wearable ACKs after its alarm ends or is silenced, so the default 3 s wait can
 | Symptom | What to check |
 |---|---|
 | `docker compose up`: `required variable HALOW_TOKEN is missing a value` | Create `.env` next to `docker-compose.yml` with `HALOW_TOKEN=<your token>` ([quick start](../README.md#quick-start-a-alert-gateway)). |
-| The container keeps restarting. `docker compose logs` says `refusing to serve on 0.0.0.0 without a token` | `HALOW_TOKEN` is empty. Set it in `.env`. |
+| The container keeps restarting. `docker logs halow-alert` (or `docker compose logs`) says `refusing to serve on 0.0.0.0 without a token` | `HALOW_TOKEN` is empty. Started with `docker run`: `docker rm -f halow-alert`, then run it again with the token ([quick start](../README.md#quick-start-a-alert-gateway), step 3). With Compose: set it in `.env`. |
 | … says `refusing to serve with the documentation's placeholder token CHANGE-ME` | Choose your own long random token. |
 | … says `[Errno 98] Address already in use` | Another program holds TCP 5001 or the API port (8080): a second copy of the gateway, or `send` or `wearables` running in another container. Find it: `sudo ss -ltnp '( sport = :5001 or sport = :8080 )'`. |
-| … says `must be 'host:port' or 'port'` or `HALOW_FORMAT must be raw8, proto or both` | Fix that setting in `.env` or `docker-compose.yml` ([settings](HTTP-API.md#service-settings)). |
-| `docker compose ps` shows `unhealthy`, and `GET /health` returns `503` | The `error` field says why. Usually the HaLowLink is unplugged or booting, or its address is not set. The service keeps running and becomes healthy again by itself once the address is back; Docker does not restart it. |
-| `GET /health` is `503` right after `docker compose up`, on a host where `doctor` passes | Read the `error` field. If it says `192.168.12.50 is not an address of this machine` and `doctor` printed `[NOTE] the standard sender address is 192.168.12.50`, the gateway has another `192.168.12.x` address (usually from DHCP), but the Compose kit sends from `192.168.12.50`. Run the [network setup](NETWORK.md#set-the-address) (`sudo ./setup-network-linux.sh usb`), then check that `doctor` shows `egress address - 192.168.12.50`. If it already does, check that `docker compose` uses Docker Engine as root, the same daemon `doctor` ran on: `docker context show` must not print `desktop-linux`, and `docker info --format '{{.SecurityOptions}}'` must not contain `rootless`. Docker Desktop and rootless Docker cannot see the HaLowLink interface. |
+| … says `must be 'host:port' or 'port'` or `HALOW_FORMAT must be raw8, proto or both` | Fix that setting: in the `docker run` command (`-e`), or in `.env` or `docker-compose.yml` ([settings](HTTP-API.md#service-settings)). |
+| `docker ps` (or `docker compose ps`) shows `unhealthy`, and `GET /health` returns `503` | The `error` field says why. Usually the HaLowLink is unplugged or booting, or its address is not set. The service keeps running and becomes healthy again by itself once the address is back; Docker does not restart it. |
+| `GET /health` is `503` right after the start, on a host where `doctor` passes | Read the `error` field. If it says `192.168.12.50 is not an address of this machine` and `doctor` printed `[NOTE] the standard sender address is 192.168.12.50`, the gateway has another `192.168.12.x` address (usually from DHCP), but the gateway is set to send from `192.168.12.50` (`HALOW_IFACE` in the quick start's `docker run` and in the Compose kit). Run the [network setup](NETWORK.md#set-the-address) (`sudo ./setup-network-linux.sh usb`), then check that `doctor` shows `egress address - 192.168.12.50`. If it already does, check that the service runs on Docker Engine as root, the same daemon `doctor` ran on: `docker context show` must not print `desktop-linux`, and `docker info --format '{{.SecurityOptions}}'` must not contain `rootless`. Docker Desktop and rootless Docker cannot see the HaLowLink interface. |
 | `docker compose logs` shows `log write failed: [Errno 13] Permission denied: '/data/halow-alert.jsonl'` | The container's user does not own `./data`. Alerts still go out. The Compose kit runs as uid and gid 1000; if `id -u` or `id -g` print something else, put `HALOW_UID=<uid>` and `HALOW_GID=<gid>` in `.env` (see [`.env.example`](../.env.example)) and run `docker compose up -d` again. |
 | `curl http://<gateway>:8080/...` works on the gateway itself but times out from another machine | The gateway's firewall blocks TCP 8080 ([firewall](NETWORK.md#firewall)), or `HALOW_HTTP` is set to `127.0.0.1:...`. |
 | `401 missing or wrong Bearer token`, although the token looks right | The header must be exactly `Authorization: Bearer <token>`, with a capital B and one space. Check for quotes, spaces or a line break around the token in your client's configuration. |
@@ -147,8 +147,8 @@ On the gateway (setup A):
 ```bash
 docker run --rm ghcr.io/clearobject/halow-alert:1.0.0 --version
 docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
-docker compose ps
-docker compose logs --tail 200
+docker ps --filter name=halow-alert          # with Compose: docker compose ps
+docker logs --tail 200 halow-alert           # with Compose: docker compose logs --tail 200
 curl -s http://127.0.0.1:8080/health
 curl -s http://127.0.0.1:8080/wearables
 ip -br -4 addr | grep -F 192.168.12.

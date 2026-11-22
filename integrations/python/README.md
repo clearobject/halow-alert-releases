@@ -186,7 +186,7 @@ Two more programs in [`examples/`](https://github.com/clearobject/halow-alert-re
 
   Exit code `0` when every alert was sent, `1` when one failed, `2` for bad settings.
 
-- [`wearable_status.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/wearable_status.py): a check before a session. It sends no alert and needs no token: it reads `GET /health` and `GET /wearables`, waits for each wearable to answer the gateway's next heartbeat request (every 15 s), and prints a line per wearable with its battery, signal strength and whether it answered:
+- [`wearable_status.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/wearable_status.py): a check before a session. It sends no alert and needs no token: it reads `GET /health` and `GET /wearables`, waits for each wearable to answer the gateway's next heartbeat request (every 15 s, or the gateway's `HALOW_HEARTBEAT`; keep `--wait` longer than that), and prints a line per wearable with its battery, signal strength and whether it answered:
 
   ```bash
   HALOW_URL=http://192.0.2.10:8080 python3 examples/wearable_status.py --expect 2 --wait 30

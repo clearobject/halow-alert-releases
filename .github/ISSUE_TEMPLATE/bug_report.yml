@@ -76,7 +76,7 @@ body:
       label: What happened
       description: What you did, what you expected, and what happened instead. Include the times, so we can match them to the logs.
       placeholder: |
-        1. Started the gateway with docker compose up -d
+        1. Started the gateway with the docker run command from the README
         2. Sent POST /alert from the client at 14:02
         3. Expected the wearable to buzz; it did not, and GET /wearables showed no ACK
     validations:
@@ -93,7 +93,7 @@ body:
     id: logs
     attributes:
       label: Logs, with tokens and passwords removed
-      description: "Setup A: `docker compose logs --tail 200`, and the output of `GET /health` and `GET /wearables`. Direct mode: your program's output or error message. Replace client addresses outside 192.168.12.x, host names and labels you do not want public with `<removed>`."
+      description: "Setup A: `docker logs --tail 200 halow-alert` (with Compose: `docker compose logs --tail 200`), and the output of `GET /health` and `GET /wearables`. Direct mode: your program's output or error message. Replace client addresses outside 192.168.12.x, host names and labels you do not want public with `<removed>`."
       render: text
     validations:
       required: false

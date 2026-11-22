@@ -13,14 +13,15 @@ Start the gateway on a Linux host that is connected to the HaLowLink, as a servi
 ```bash
 HALOW_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))'); echo "token: $HALOW_TOKEN"
 docker run -d --name halow-alert --restart unless-stopped --network host \
-  -e HALOW_TOKEN="$HALOW_TOKEN" -e HALOW_IFACE=192.168.12.50 \
+  -e HALOW_TOKEN="${HALOW_TOKEN:?make the token first}" -e HALOW_IFACE=192.168.12.50 \
   -v halow-alert-data:/data \
   ghcr.io/clearobject/halow-alert:1.0.0
 ```
 
-Then alert the wearables from Python, on any machine that can reach the gateway:
+Then alert the wearables from Python, on any machine that can reach the gateway. Install the client into a virtual environment (Windows commands: `integrations/python/README.md`):
 
 ```bash
+python3 -m venv .venv && . .venv/bin/activate
 python -m pip install https://github.com/clearobject/halow-alert-releases/releases/download/v1.0.0/clearobject_halow_client-1.0.0-py3-none-any.whl
 ```
 

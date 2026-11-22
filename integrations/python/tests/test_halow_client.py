@@ -754,6 +754,16 @@ class ExampleScriptTests(_StubCase):
         self.assertRegex(table, r"\? +192\.168\.12\.144 +\? +\? +1  answered")
         self.assertIn("2 of 2 wearable(s) answered", table)
 
+    def test_wearable_status_gateway_restart_and_odd_device_ids(self):
+        mod = _load_example("wearable_status")
+        before = {"devices": [_device("192.168.12.143", acks=3, heartbeats=40)]}
+        after_restart = {"devices": [_device("192.168.12.143", heartbeats=1, device_id="wz-07\ufffd\x1b[2J")]}
+        lines = []
+        self.assertEqual(mod.check(_ScriptedClient(wearables=[before, after_restart]), expect=1, wait_s=5,
+                                   poll_s=0, out=lines.append), 0, lines)
+        self.assertRegex(lines[2], r"^wz-07\?\?\[2J +192\.168\.12\.143 .* answered$")
+        self.assertTrue(all(ch.isascii() and ch.isprintable() for ch in "".join(lines)))
+
     def test_wearable_status_silent_wearable(self):
         mod = _load_example("wearable_status")
         quiet = {"devices": [_device("192.168.12.143", heartbeats=4)]}
