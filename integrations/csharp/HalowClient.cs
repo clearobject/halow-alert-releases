@@ -45,7 +45,7 @@ namespace ClearObject.Halow
     /// <summary>Defaults shared by the gateway and the wearables.</summary>
     public static class HalowDefaults
     {
-        public const string Version = "0.1.0";
+        public const string Version = "1.0.0";
         public const string DefaultUrl = "http://127.0.0.1:8080";
         public const string DefaultEgress = "192.168.12.50";
         public const string Group = "239.255.0.10";

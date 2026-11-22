@@ -8,7 +8,7 @@
 # match the image's, except HALOW_IFACE, which the image leaves empty (auto-detect).
 services:
   halow-alert:
-    image: ghcr.io/clearobject/halow-alert:0.1.0
+    image: ghcr.io/clearobject/halow-alert:1.0.0
     network_mode: host          # required: multicast leaves on the host's HaLowLink interface
     restart: unless-stopped
     # Runs as the owner of ./data so the log can be written there. 1000 is the first user

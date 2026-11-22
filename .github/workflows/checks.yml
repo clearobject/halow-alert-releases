@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Python syntax
-        run: python -m py_compile integrations/python/*.py integrations/python/tests/*.py tools/*.py .github/scripts/*.py
+        run: python -m py_compile integrations/python/*.py integrations/python/examples/*.py integrations/python/tests/*.py tools/*.py .github/scripts/*.py
       - name: ruff (Python 3.8 target)
         run: |
           python -m pip install --disable-pip-version-check "ruff==0.16.4"
@@ -427,6 +427,20 @@ jobs:
           done
           grep -q '"event":"wearable_ack"' "$log" || fail "no wearable_ack in ./$log"
           echo "end to end: OK"
+
+      - name: "Gateway mode: the Python examples"
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          # HALOW_HEARTBEAT=2 here, so the stand-in wearable answers within a few seconds.
+          python3 integrations/python/examples/wearable_status.py --expect 1 --wait 10 | tee "$RUNNER_TEMP/status.log"
+          grep -qE '^fake-gateway +127\.0\.0\.1 .* answered$' "$RUNNER_TEMP/status.log" \
+            || fail "wearable_status.py: the stand-in wearable did not answer"
+          # Two alerts back to back: the second meets the 0.5 s rate limit and is retried.
+          python3 integrations/python/examples/alert_from_your_app.py --step 0
+          "$RUNNER_TEMP/expect-acks.sh" 8
+          [ "$(grep -c '"source":"http:127.0.0.1:vehicle within 5 m"' data/halow-alert.jsonl)" = 2 ] \
+            || fail "want 2 alerts labelled 'vehicle within 5 m' in ./data/halow-alert.jsonl"
 
       - name: Diagnostics
         if: failure()

@@ -261,7 +261,7 @@ The status words used in this guide:
 |---|---|
 | **Verified on hardware** | Seen working with real wearables, in production use with the ClearObject Workzone system. |
 | **Verified against the schema** | Checked against ClearObject's protocol definitions and their byte-level tests. |
-| **Verified in software** | halow-alert 0.1.0 behaviour, tested over loopback against the stand-in wearable. Not yet on HaLow hardware. |
+| **Verified in software** | halow-alert 1.0.0 behaviour, tested over loopback against the stand-in wearable. Not yet on HaLow hardware. |
 | **Documented** | Stated by ClearObject's operator app and protocol definitions; not yet measured with halow-alert. |
 | **Inferred** | Follows from code and simulators; not proven on hardware. |
 | **Unknown** | Open; to be measured during hardware verification. |

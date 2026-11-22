@@ -60,7 +60,7 @@ body:
     attributes:
       label: halow-alert version
       description: "Setup A: `docker run --rm ghcr.io/clearobject/halow-alert:<tag> --version`. Python package: `halow-client --version`. Otherwise the release you downloaded."
-      placeholder: "0.1.0"
+      placeholder: "1.0.0"
     validations:
       required: true
   - type: input

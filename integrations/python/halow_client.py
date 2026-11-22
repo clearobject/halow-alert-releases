@@ -54,7 +54,7 @@ import time
 import urllib.error
 import urllib.request
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 DEFAULT_URL = "http://127.0.0.1:8080"
 DEFAULT_EGRESS = "192.168.12.50"

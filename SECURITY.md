@@ -43,7 +43,7 @@ These are documented properties of the design, not vulnerabilities. The [securit
 
 ## Supported versions
 
-Security fixes are made in the **latest release** only. Pin an exact image tag (for example `0.1.0`) for stability, and move to the newest release when an advisory is published. Python package users pin the release's wheel URL or `git+https` tag, and install the newest release's wheel when an advisory is published. The [releases page](https://github.com/clearobject/halow-alert-releases/releases) lists every version.
+Security fixes are made in the **latest release** only. Pin an exact image tag (for example `1.0.0`) for stability, and move to the newest release when an advisory is published. Python package users pin the release's wheel URL or `git+https` tag, and install the newest release's wheel when an advisory is published. The [releases page](https://github.com/clearobject/halow-alert-releases/releases) lists every version.
 
 ## Hardening checklist
 

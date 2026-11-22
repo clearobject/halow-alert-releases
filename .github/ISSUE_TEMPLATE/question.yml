@@ -37,6 +37,6 @@ body:
     id: version
     attributes:
       label: halow-alert version, if relevant
-      placeholder: "0.1.0"
+      placeholder: "1.0.0"
     validations:
       required: false
