@@ -1,6 +1,6 @@
 {
   "name": "halow-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Raise ClearZone HaLow wearable alerts through the halow-alert gateway (HTTP) or directly (UDP multicast). No dependencies.",
   "license": "MIT",
   "private": true,

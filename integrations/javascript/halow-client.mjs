@@ -21,7 +21,7 @@
 import dgram from 'node:dgram';
 import net from 'node:net';
 
-export const VERSION = '0.1.0';
+export const VERSION = '1.0.0';
 export const DEFAULT_URL = 'http://127.0.0.1:8080';
 export const DEFAULT_EGRESS = '192.168.12.50';
 export const GROUP = '239.255.0.10';

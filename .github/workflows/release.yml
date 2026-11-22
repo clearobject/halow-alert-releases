@@ -132,7 +132,8 @@ jobs:
             [ -e "$stage/$f" ] || fail "$f is missing from the kit"
           done
           chmod 755 "$stage/setup-network-linux.sh" "$stage/tools/fake_wearable.py" "$stage/integrations/curl/alert.sh" \
-                    "$stage/integrations/python/halow_client.py" "$stage/integrations/python/example.py"
+                    "$stage/integrations/python/halow_client.py" "$stage/integrations/python/example.py" \
+                    "$stage/integrations/python/examples/alert_from_your_app.py" "$stage/integrations/python/examples/wearable_status.py"
           (cd "$RUNNER_TEMP/stage" && zip -r -X -q "$GITHUB_WORKSPACE/dist/$name.zip" "$name")
           unzip -l "dist/$name.zip"
           [ "$(unzip -Z1 "dist/$name.zip" | cut -d/ -f1 | sort -u)" = "$name" ] || fail "the zip must hold one top-level folder, $name"

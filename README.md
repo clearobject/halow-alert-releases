@@ -7,7 +7,7 @@
 ClearZone wearables (vests and handhelds) vibrate and sound when they receive an alert over a Wi-Fi HaLow (IEEE 802.11ah) network served by a Morse Micro HaLowLink 2. **halow-alert** is a small gateway service that lets any program, such as a simulator, a control application or a test script, trigger them with a single HTTP request, and that reports which wearables acknowledged. Everything runs on your local network: no cloud, no internet connection and no ClearObject Workzone camera system are needed. This repository holds the user documentation, ready-made integrations, the Docker Compose kit and the releases. The service itself ships as the container image `ghcr.io/clearobject/halow-alert`.
 
 > [!NOTE]
-> **Version 0.1.0 is a pre-release.** It has been tested in software against a stand-in wearable, but it has not yet been verified with HaLow hardware. The [changelog](CHANGELOG.md) lists what is still open. Version 1.0.0 will follow hardware verification.
+> **Version 1.0.0** has been tested in software on Linux, macOS and Windows, against a stand-in wearable that follows the documented protocol. It has not yet been verified with HaLow hardware: the [changelog](CHANGELOG.md) lists the points still to check. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
 
 ## How it works
 
@@ -55,37 +55,55 @@ Docker Desktop (on macOS, Windows or Linux) and rootless Docker run containers i
 
 ## Quick start A: alert gateway
 
-On the Linux gateway, in the unpacked kit from the [latest release](https://github.com/clearobject/halow-alert-releases/releases) (or a clone of this repository). You need Docker Engine with the Compose plugin, and internet access once to download the image. If `docker` says `permission denied` on `/var/run/docker.sock`, run the commands with `sudo`, or add your user to the `docker` group ([Docker's post-install steps](https://docs.docker.com/engine/install/linux-postinstall/)).
+On the Linux gateway. You need Docker Engine ([install it](https://docs.docker.com/engine/install/)), and internet access once to download the image. If `docker` says `permission denied` on `/var/run/docker.sock`, run the `docker` commands with `sudo`, or add your user to the `docker` group ([Docker's post-install steps](https://docs.docker.com/engine/install/linux-postinstall/)).
+
+**1. Connect the HaLowLink.** Plug its USB-C into the gateway and wait about 60 s. Then give the gateway its static address `192.168.12.50/24` with [`setup-network-linux.sh`](setup-network-linux.sh), from the kit zip of the [latest release](https://github.com/clearobject/halow-alert-releases/releases) (it uses NetworkManager; [docs/NETWORK.md](docs/NETWORK.md) covers other setups and the LAN port):
 
 ```bash
-# 1. Plug the HaLowLink's USB-C into the gateway, wait about 60 s, then give the
-#    gateway its static address 192.168.12.50/24 (NetworkManager; see docs/NETWORK.md):
 sudo ./setup-network-linux.sh usb
+```
 
-# 2. Check the path (this sends nothing to the wearables). Every row should say PASS,
-#    with egress address 192.168.12.50 and no [NOTE] line:
-docker run --rm --network host ghcr.io/clearobject/halow-alert:0.1.0 doctor
+**2. Check the path.** This sends nothing to the wearables. Every row should say PASS, with egress address `192.168.12.50` and no `[NOTE]` line:
 
-# 3. Create a long random token (anyone who has it can set off the wearables) and start:
+```bash
+docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
+```
+
+**3. Start the service.** First make a long random token: anyone who has it can set off the wearables. Note the token that is printed; the machines that call the API need it.
+
+```bash
+HALOW_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))'); echo "token: $HALOW_TOKEN"
+
+docker run -d --name halow-alert --restart unless-stopped --network host \
+  -e HALOW_TOKEN="$HALOW_TOKEN" -e HALOW_IFACE=192.168.12.50 \
+  -v halow-alert-data:/data \
+  ghcr.io/clearobject/halow-alert:1.0.0
+```
+
+That one `docker run` is the whole service. `--restart unless-stopped` restarts it if it fails, and starts it again whenever Docker starts, so it comes back after a reboot as long as Docker starts at boot (`sudo systemctl enable docker`; Docker Engine's packages for Ubuntu, Debian and Raspberry Pi OS do that already). `--network host` is required: the multicast has to leave through the host's HaLowLink interface. The service looks up the HaLowLink address on every request, so it needs no restart when the HaLowLink is plugged in after it.
+
+| To | Run |
+|---|---|
+| Check that it runs | `docker ps --filter name=halow-alert` says `(healthy)` about 30 s after the start |
+| See its output | `docker logs -f halow-alert` |
+| Show the token again | `docker exec halow-alert printenv HALOW_TOKEN` |
+| Read the log of alerts, ACKs and heartbeats | `docker exec halow-alert tail -n 20 /data/halow-alert.jsonl` |
+| Stop it, start it again | `docker stop halow-alert`, `docker start halow-alert` |
+| Change a setting, or move to a new version | `docker rm -f halow-alert`, then the `docker run` above with the new setting or image tag. The log volume stays. |
+| Remove it | `docker rm -f halow-alert && docker volume rm halow-alert-data` |
+
+The settings are environment variables (`-e NAME=value`), listed in the [HTTP API reference](docs/HTTP-API.md#service-settings).
+
+**With Docker Compose instead**, in the unpacked kit (Docker's Compose plugin is needed). The kit's [`docker-compose.yml`](docker-compose.yml) runs the same service and writes its log to `./data/halow-alert.jsonl`:
+
+```bash
 echo "HALOW_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')" > .env
 docker compose up -d
 docker compose ps        # "healthy" after about 30 s
 grep HALOW_TOKEN .env    # the token: give it to the machines that call the API
 ```
 
-The container runs as uid and gid 1000 (the first user on Ubuntu, Jetson and Raspberry Pi OS) so that it can write its log to `./data/halow-alert.jsonl`. If `id -u` or `id -g` print something else, add `HALOW_UID=<uid>` and `HALOW_GID=<gid>` to `.env`, as [`.env.example`](.env.example) shows. Keep `.env` out of version control and shared documents.
-
-**Without Compose**, the same service as a single `docker run`:
-
-```bash
-export HALOW_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')   # keep it
-docker run -d --name halow-alert --network host --restart unless-stopped \
-  -e HALOW_IFACE=192.168.12.50 -e HALOW_TOKEN \
-  -v halow-alert-data:/data \
-  ghcr.io/clearobject/halow-alert:0.1.0
-```
-
-`--network host` is required: the multicast has to leave through the host's HaLowLink interface.
+Compose runs the container as uid and gid 1000 (the first user on Ubuntu, Jetson and Raspberry Pi OS) so that it can write to `./data`. If `id -u` or `id -g` print something else, add `HALOW_UID=<uid>` and `HALOW_GID=<gid>` to `.env`, as [`.env.example`](.env.example) shows. Keep `.env` out of version control and shared documents.
 
 **Trigger an alert** from any machine that can reach the gateway. First set the token from the gateway's `.env` there (`export HALOW_TOKEN=<token>`; in PowerShell `$env:HALOW_TOKEN='<token>'`):
 
@@ -99,7 +117,7 @@ curl http://<gateway>:8080/wearables   # who answered: ACK counts, battery, sign
 curl http://<gateway>:8080/health      # 200 when the gateway can send, 503 when it cannot
 ```
 
-On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for a different command), or use `Invoke-RestMethod`. Allow TCP 8080 from your client machines and TCP 5001 from `192.168.12.0/24` in the gateway's firewall ([how](docs/NETWORK.md#firewall)). The [HTTP API reference](docs/HTTP-API.md) documents every field and status code.
+On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for a different command), or use `Invoke-RestMethod`. Allow TCP 8080 from your client machines and TCP 5001 from `192.168.12.0/24` in the gateway's firewall ([how](docs/NETWORK.md#firewall)). The [HTTP API reference](docs/HTTP-API.md) documents every field and status code. To call the gateway from Python, see [Use it from Python](#use-it-from-python).
 
 ## Quick start B: direct mode
 
@@ -117,6 +135,49 @@ On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for a different
 3. Optionally, to learn which wearables acknowledged, accept TCP connections on port 5001 and decode the reply. Allow TCP 5001 from `192.168.12.0/24` in your firewall.
 
 The [integrations](integrations/README.md) contain complete, tested examples for both modes, and the [wire protocol](docs/PROTOCOL.md) documents every byte.
+
+## Use it from Python
+
+The Python client, `halow_client`, needs Python 3.8 or later and nothing else. Install it from the release into a virtual environment (the [Python client guide](integrations/python/README.md#install) shows the other ways, and the Windows commands):
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+python -m pip install https://github.com/clearobject/halow-alert-releases/releases/download/v1.0.0/clearobject_halow_client-1.0.0-py3-none-any.whl
+```
+
+**Through the gateway** (setup A), from any machine that can reach it:
+
+```python
+from halow_client import GatewayClient, HalowError
+
+gw = GatewayClient("http://<gateway>:8080", token="<token>")   # or set HALOW_URL and HALOW_TOKEN
+try:
+    gw.alert(label="zone-3 intrusion")      # every wearable on the HaLowLink alerts now
+except HalowError as e:                     # e.status: 401 wrong token, 429 less than 0.5 s since the last alert, ...
+    print("alert failed:", e)
+print(gw.wearables()["devices"])            # who answered: ACKs, battery, signal strength
+```
+
+**Directly** (setup B), on the machine that is plugged into the HaLowLink:
+
+```python
+from halow_client import ResponseListener, send_direct, subnet_prefix
+
+egress = "192.168.12.50"                    # this machine's address on the HaLowLink
+with ResponseListener(5001, allow_prefix=subnet_prefix(egress)) as replies:
+    record = send_direct(egress)            # every wearable on the HaLowLink alerts now
+    print(replies.wait_for("ACK", timeout=15, after_ms=record["ts_ms"]))   # a wearable's ACK, or None
+```
+
+Complete programs to start from:
+
+| Example | What it shows |
+|---|---|
+| [`example.py`](integrations/python/example.py) | One alert, then waiting for a wearable's ACK, through the gateway or directly (`--direct`) |
+| [`examples/alert_from_your_app.py`](integrations/python/examples/alert_from_your_app.py) | Alerts from inside your own program loop, such as a simulator: sent on a background thread so the loop never waits, once per event, with a retry when the gateway answers `429` |
+| [`examples/wearable_status.py`](integrations/python/examples/wearable_status.py) | A check before a session: can the gateway send, and which wearables answer, with battery and signal strength. Nothing buzzes. |
+
+The [Python client guide](integrations/python/README.md) documents every function and the `halow-client` command. JavaScript, C# and curl clients are in [`integrations/`](integrations/README.md).
 
 **No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like the real one, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented protocol; it does not prove the real wearable's behaviour.
 
@@ -149,7 +210,7 @@ The [integrations](integrations/README.md) contain complete, tested examples for
 | Path | What it is |
 |---|---|
 | [`integrations/`](integrations/README.md) | Ready-made clients for your software, for both setups |
-| [`integrations/python/`](integrations/python/) | Python 3.8 or later: one file to copy, or the package `clearobject-halow-client` for pip, with the `halow-client` command |
+| [`integrations/python/`](integrations/python/) | Python 3.8 or later: one file to copy, or the package `clearobject-halow-client` for pip, with the `halow-client` command, and [examples](integrations/python/examples/) |
 | [`integrations/javascript/`](integrations/javascript/) | JavaScript (Node.js 18 or later) |
 | [`integrations/csharp/`](integrations/csharp/) | C# (.NET 8 or later; the library also builds for .NET Standard 2.1, so Unity 2021.2 or later) |
 | [`integrations/curl/`](integrations/curl/) | A curl script, and curl and PowerShell one-liners (gateway mode) |
@@ -164,11 +225,11 @@ The image `ghcr.io/clearobject/halow-alert` is public (no login needed) and buil
 
 | Image tag | Points to | Use it for |
 |---|---|---|
-| `0.1.0` (`X.Y.Z`) | One exact release; never moved | Anything you depend on. The kit's `docker-compose.yml` pins it. |
-| `0.1` (`X.Y`) | The newest patch release of `X.Y` | Picking up fixes automatically |
+| `1.0.0` (`X.Y.Z`) | One exact release; never moved | Anything you depend on. The kit's `docker-compose.yml` pins it. |
+| `1.0` (`X.Y`) | The newest patch release of `X.Y` | Picking up fixes automatically |
 | `latest` | The newest release | Quick trials only |
 
-Each [GitHub release](https://github.com/clearobject/halow-alert-releases/releases) attaches the kit as a zip (documentation, integrations, Compose file, network setup script and stand-in wearable) with its SHA-256 checksum, and the Python client package for pip as a wheel and an sdist, each with its SHA-256 checksum ([how to install it](integrations/python/README.md#install)). The project follows [Semantic Versioning](https://semver.org/). While the version is 0.x, a minor release may change behaviour; the [changelog](CHANGELOG.md) always says what changed. Version 0.1.0 is a pre-release, not yet verified on hardware.
+Each [GitHub release](https://github.com/clearobject/halow-alert-releases/releases) attaches the kit as a zip (documentation, integrations, Compose file, network setup script and stand-in wearable) with its SHA-256 checksum, and the Python client package for pip as a wheel and an sdist, each with its SHA-256 checksum ([how to install it](integrations/python/README.md#install)). The project follows [Semantic Versioning](https://semver.org/): within 1.x, no release breaks the HTTP API, the settings or the Python client's functions, and the [changelog](CHANGELOG.md) always says what changed.
 
 ## Support
 

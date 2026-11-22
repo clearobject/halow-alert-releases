@@ -30,7 +30,7 @@ In direct mode:
 
 | Folder | Runtime | Library | Example |
 |---|---|---|---|
-| [`python/`](python/) | Python 3.8 or newer | `halow_client.py`, also the `halow-client` command; installable with pip as `clearobject-halow-client` | `example.py` |
+| [`python/`](python/) | Python 3.8 or newer | `halow_client.py`, also the `halow-client` command; installable with pip as `clearobject-halow-client` | `example.py`, and [`examples/`](python/examples/) (alerts from your own program loop; a wearable status check) |
 | [`javascript/`](javascript/) | Node.js 18 or newer | `halow-client.mjs` (ES module) | `example.mjs` |
 | [`csharp/`](csharp/) | .NET 8 or newer (tested), any .NET Standard 2.1 runtime, or Unity 2021.2 or newer | `HalowClient.cs` (one file) | `Example.cs` in `HalowExample.csproj` (.NET 8 or newer) |
 | [`curl/`](curl/) | bash and curl | `alert.sh` (gateway mode only) | |
@@ -118,7 +118,7 @@ python3 tools/fake_wearable.py --iface 127.0.0.1 --group 239.255.77.1 --port 150
 docker run -d --name halow-dev --network host \
   -e HALOW_IFACE=127.0.0.1 -e HALOW_ROUTER=127.0.0.1 -e HALOW_HTTP=127.0.0.1:18080 \
   -e HALOW_GROUP=239.255.77.1 -e HALOW_PORT=15000 -e HALOW_RESPONSE_PORT=15001 \
-  -e HALOW_TOKEN=dev-only ghcr.io/clearobject/halow-alert:0.1.0
+  -e HALOW_TOKEN=dev-only ghcr.io/clearobject/halow-alert:1.0.0
 export HALOW_URL=http://127.0.0.1:18080 HALOW_TOKEN=dev-only
 python3 integrations/python/example.py
 node integrations/javascript/example.mjs
@@ -141,4 +141,4 @@ All clients put the same bytes on the wire as the gateway. [`testdata/vectors.js
 
 ## Status
 
-Version 0.1.0 is a pre-release. The clients are tested in software only: CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows, and installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 1.0.0. The clients are tested in software only: CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows, and installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.

@@ -1,6 +1,6 @@
 # Python client
 
-`halow_client` raises ClearObject ClearZone wearable alerts from Python 3.8 or newer, using only the standard library. It is one module, `halow_client.py`. Install it as the package `clearobject-halow-client`, which also installs the `halow-client` command, or copy the file into your project. Read [the integrations overview](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/README.md) first: it explains gateway mode and direct mode, the settings and the errors.
+`halow_client` raises ClearObject ClearZone wearable alerts from Python 3.8 or newer, using only the standard library. It is one module, `halow_client.py`. Install it as the package `clearobject-halow-client`, which also installs the `halow-client` command, or copy the file into your project. Read [the integrations overview](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/README.md) first: it explains gateway mode and direct mode, the settings and the errors.
 
 > Every wearable on the HaLowLink network vibrates and sounds when an alert goes out. Warn the people nearby first.
 
@@ -20,28 +20,28 @@ While the environment is active, `python` and the `halow-client` command are the
 1. **The wheel from the GitHub release.** No git needed:
 
    ```bash
-   python -m pip install https://github.com/clearobject/halow-alert-releases/releases/download/v0.1.0/clearobject_halow_client-0.1.0-py3-none-any.whl
+   python -m pip install https://github.com/clearobject/halow-alert-releases/releases/download/v1.0.0/clearobject_halow_client-1.0.0-py3-none-any.whl
    ```
 
-   The [release](https://github.com/clearobject/halow-alert-releases/releases/tag/v0.1.0) also has the sdist, `clearobject_halow_client-0.1.0.tar.gz`, and a `.sha256` file for each. To check the wheel before you install it, download it and its `.sha256` file into one folder and compare them there:
+   The [release](https://github.com/clearobject/halow-alert-releases/releases/tag/v1.0.0) also has the sdist, `clearobject_halow_client-1.0.0.tar.gz`, and a `.sha256` file for each. To check the wheel before you install it, download it and its `.sha256` file into one folder and compare them there:
 
    ```bash
-   sha256sum -c clearobject_halow_client-0.1.0-py3-none-any.whl.sha256          # Linux
-   shasum -a 256 -c clearobject_halow_client-0.1.0-py3-none-any.whl.sha256      # macOS
+   sha256sum -c clearobject_halow_client-1.0.0-py3-none-any.whl.sha256          # Linux
+   shasum -a 256 -c clearobject_halow_client-1.0.0-py3-none-any.whl.sha256      # macOS
    ```
 
    On Windows, in PowerShell, this prints `True` when the file is intact:
 
    ```powershell
-   (Get-FileHash .\clearobject_halow_client-0.1.0-py3-none-any.whl -Algorithm SHA256).Hash -eq (Get-Content .\clearobject_halow_client-0.1.0-py3-none-any.whl.sha256).Split(' ')[0]
+   (Get-FileHash .\clearobject_halow_client-1.0.0-py3-none-any.whl -Algorithm SHA256).Hash -eq (Get-Content .\clearobject_halow_client-1.0.0-py3-none-any.whl.sha256).Split(' ')[0]
    ```
 
-   Then install the checked file: `python -m pip install ./clearobject_halow_client-0.1.0-py3-none-any.whl`. In a `requirements.txt`, write `clearobject-halow-client @ <the wheel URL above>`.
+   Then install the checked file: `python -m pip install ./clearobject_halow_client-1.0.0-py3-none-any.whl`. In a `requirements.txt`, write `clearobject-halow-client @ <the wheel URL above>`.
 
 2. **From this repository with git**, at a release tag:
 
    ```bash
-   python -m pip install "git+https://github.com/clearobject/halow-alert-releases@v0.1.0#subdirectory=integrations/python"
+   python -m pip install "git+https://github.com/clearobject/halow-alert-releases@v1.0.0#subdirectory=integrations/python"
    ```
 
    pip builds the package on your machine and downloads the build tool, `setuptools`, from PyPI for that. From a clone of this repository or the unpacked kit, `python -m pip install ./integrations/python` does the same.
@@ -50,7 +50,7 @@ While the environment is active, `python` and the `halow-client` command are the
 
 **PyPI:** ClearObject does not publish this package on PyPI. Install it only in one of the ways above. A package of the same name on PyPI is ClearObject's only if its PyPI page lists this repository, https://github.com/clearobject/halow-alert-releases, under **Verified details**.
 
-Check the installation with `halow-client --version`, which prints the version, `0.1.0`. On Windows outside a virtual environment, if the `halow-client` command is not found because Python's `Scripts` folder is not on `PATH`, use `py -m halow_client` instead.
+Check the installation with `halow-client --version`, which prints the version, `1.0.0`. On Windows outside a virtual environment, if the `halow-client` command is not found because Python's `Scripts` folder is not on `PATH`, use `py -m halow_client` instead.
 
 ## Gateway mode
 
@@ -142,7 +142,7 @@ halow-client selftest integrations/testdata/vectors.json
 
 ## Try it without hardware
 
-The stand-in wearable, `tools/fake_wearable.py`, answers like a wearable, on loopback and on ports that nothing else uses. It is not part of the package: it is in the kit zip on the [release page](https://github.com/clearobject/halow-alert-releases/releases/tag/v0.1.0) and in [this repository](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/tools/fake_wearable.py). On Linux, enable loopback multicast first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/README.md#try-it-without-hardware) in the integrations overview describes; macOS needs no setup. On Windows, start the stand-in wearable in a window of its own, as the overview shows.
+The stand-in wearable, `tools/fake_wearable.py`, answers like a wearable, on loopback and on ports that nothing else uses. It is not part of the package: it is in the kit zip on the [release page](https://github.com/clearobject/halow-alert-releases/releases/tag/v1.0.0) and in [this repository](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/tools/fake_wearable.py). On Linux, enable loopback multicast first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/README.md#try-it-without-hardware) in the integrations overview describes; macOS needs no setup. On Windows, start the stand-in wearable in a window of its own, as the overview shows.
 
 From the folder that holds `tools/` (the unpacked kit or a clone), with the virtual environment active:
 
@@ -166,7 +166,7 @@ with ResponseListener(rport, allow_prefix=subnet_prefix(egress)) as replies:
 
 ## Example
 
-[`example.py`](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/python/example.py) is in this folder of the repository and the kit. It is not part of the package.
+[`example.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/example.py) is in this folder of the repository and the kit. It is not part of the package.
 
 ```bash
 HALOW_URL=http://192.0.2.10:8080 HALOW_TOKEN=<token> python3 example.py      # gateway mode
@@ -174,17 +174,37 @@ HALOW_EGRESS=192.168.12.50 python3 example.py --direct                         #
 python3 example.py --selftest                                                  # codec check, sends nothing
 ```
 
+## More examples
+
+Two more programs in [`examples/`](https://github.com/clearobject/halow-alert-releases/tree/v1.0.0/integrations/python/examples), in the repository and the kit, not in the package. Both use gateway mode and read `HALOW_URL` and `HALOW_TOKEN`. They find `halow_client.py` one folder up, or use the installed package.
+
+- [`alert_from_your_app.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/alert_from_your_app.py): the class `WearableAlerter`, to copy into your program. `alert(label)` returns at once and the alert goes out on a background thread, so a simulator or control loop never waits for the network. On `429` it tries once more after 0.6 s; any failure goes to a callback instead of raising into your loop. The demo alerts once each time a made-up distance drops below 5 m, so it sends two alerts:
+
+  ```bash
+  HALOW_URL=http://192.0.2.10:8080 HALOW_TOKEN=<token> python3 examples/alert_from_your_app.py
+  ```
+
+  Exit code `0` when every alert was sent, `1` when one failed, `2` for bad settings.
+
+- [`wearable_status.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/wearable_status.py): a check before a session. It sends no alert and needs no token: it reads `GET /health` and `GET /wearables`, waits for each wearable to answer the gateway's next heartbeat request (every 15 s), and prints a line per wearable with its battery, signal strength and whether it answered:
+
+  ```bash
+  HALOW_URL=http://192.0.2.10:8080 python3 examples/wearable_status.py --expect 2 --wait 30
+  ```
+
+  Exit code `0` when the gateway can send and at least `--expect` wearables (default 1) answered within `--wait` seconds (default 20), `3` when fewer answered, `1` when the gateway cannot send or was not reached, `2` for bad settings.
+
 ## Tests
 
-The tests use the standard library's `unittest` and never reach a wearable: gateway mode runs against an HTTP stub on `127.0.0.1`, and direct mode against the stand-in wearable, [`tools/fake_wearable.py`](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/tools/fake_wearable.py), on loopback. From the repository root:
+The tests use the standard library's `unittest` and never reach a wearable: gateway mode and the examples run against an HTTP stub on `127.0.0.1`, and direct mode against the stand-in wearable, [`tools/fake_wearable.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/tools/fake_wearable.py), on loopback. From the repository root:
 
 ```bash
 python3 -m unittest discover -s integrations/python/tests -v                          # the source file
 HALOW_TEST_INSTALLED=1 python -m unittest discover -s integrations/python/tests -v    # the package installed in the active virtual environment
 ```
 
-The direct-mode tests need loopback multicast. On Linux, enable it first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/integrations/README.md#try-it-without-hardware) describes; without it they are skipped. `HALOW_TEST_REQUIRE_MULTICAST=1` turns that skip into a failure.
+The direct-mode tests need loopback multicast. On Linux, enable it first, as [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/README.md#try-it-without-hardware) describes; without it they are skipped. `HALOW_TEST_REQUIRE_MULTICAST=1` turns that skip into a failure.
 
 ## Version
 
-`halow_client.__version__` is the package's version. It equals the version of the halow-alert release, and of the gateway image `ghcr.io/clearobject/halow-alert`, that it was released with. The [changelog](https://github.com/clearobject/halow-alert-releases/blob/v0.1.0/CHANGELOG.md) lists the changes.
+`halow_client.__version__` is the package's version. It equals the version of the halow-alert release, and of the gateway image `ghcr.io/clearobject/halow-alert`, that it was released with. The [changelog](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/CHANGELOG.md) lists the changes.

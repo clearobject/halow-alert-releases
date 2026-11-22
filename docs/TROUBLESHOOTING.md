@@ -17,13 +17,13 @@ Start with [`doctor`](#doctor): it checks the whole path from the gateway to the
 On the Linux gateway:
 
 ```bash
-docker run --rm --network host ghcr.io/clearobject/halow-alert:0.1.0 doctor
+docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
 ```
 
 A healthy gateway prints:
 
 ```text
-halow_alert 0.1.0  group 239.255.0.10:5000  router 192.168.12.1
+halow_alert 1.0.0  group 239.255.0.10:5000  router 192.168.12.1
   [PASS] egress address - 192.168.12.50
   [PASS] route to HaLowLink - 192.168.12.1 is reached from 192.168.12.50
   [PASS] HaLowLink reachable - https://192.168.12.1 answers
@@ -57,7 +57,7 @@ A failing first row looks like this:
 The image has a few more commands besides the gateway service (`serve`, the default). Run them the same way as `doctor`:
 
 ```bash
-docker run --rm --network host ghcr.io/clearobject/halow-alert:0.1.0 <command> [options]
+docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 <command> [options]
 ```
 
 | Command | What it does |
@@ -145,8 +145,8 @@ Issues are public. Replace host names, user names, alert labels you do not want 
 On the gateway (setup A):
 
 ```bash
-docker run --rm ghcr.io/clearobject/halow-alert:0.1.0 --version
-docker run --rm --network host ghcr.io/clearobject/halow-alert:0.1.0 doctor
+docker run --rm ghcr.io/clearobject/halow-alert:1.0.0 --version
+docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
 docker compose ps
 docker compose logs --tail 200
 curl -s http://127.0.0.1:8080/health

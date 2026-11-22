@@ -21,6 +21,7 @@ Without it they are skipped, or fail when HALOW_TEST_REQUIRE_MULTICAST=1.
 """
 import contextlib
 import importlib
+import importlib.util
 import io
 import json
 import os
@@ -349,7 +350,9 @@ def _default_routes() -> dict:
     }
 
 
-class GatewayTests(unittest.TestCase):
+class _StubCase(unittest.TestCase):
+    """An HTTP stub of the gateway on loopback, with every HALOW_* setting cleared."""
+
     @classmethod
     def setUpClass(cls):
         cls.srv = _StubServer((LOOPBACK, 0), _StubHandler)
@@ -383,6 +386,8 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(cm.exception.status, status, str(cm.exception))
         return cm.exception
 
+
+class GatewayTests(_StubCase):
     def test_health(self):
         body = hc.GatewayClient(self.url, token=TOKEN).health()
         self.assertIs(body["ok"], True)
@@ -622,6 +627,166 @@ class DirectModeTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("ACK from 127.0.0.1", r.stdout)
         self.assertRegex(r.stdout, r"(?m)^[1-9][0-9]* ACK\(s\) from 1 wearable\(s\)")
+
+
+# --------------------------------------------------------------------------- #
+# The examples in integrations/python/examples, against the HTTP stub
+# --------------------------------------------------------------------------- #
+EXAMPLES_DIR = os.path.join(SOURCE_DIR, "examples")
+DEMO_LABEL = "vehicle within 5 m"
+
+
+def _load_example(name: str):
+    """Import an example as a module. It puts the source folder first on sys.path to find
+    halow_client; this undoes that, so the module under test stays the one imported above."""
+    saved = list(sys.path)
+    try:
+        spec = importlib.util.spec_from_file_location("example_" + name, os.path.join(EXAMPLES_DIR, name + ".py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path[:] = saved
+    assert module.hc is hc, "the example imported another halow_client"
+    return module
+
+
+class _ScriptedClient:
+    """Stands in for GatewayClient: health() and wearables() return the given bodies in turn
+    (the last one repeats), alert() runs the given functions in turn."""
+
+    url = "http://gateway.invalid:8080"
+
+    def __init__(self, health=None, wearables=(), alerts=()):
+        self._health = health if health is not None else {"ok": True, "version": "x", "egress": "192.0.2.50"}
+        self._wearables, self._alerts = list(wearables), list(alerts)
+        self.alert_labels = []
+
+    def health(self):
+        return self._health
+
+    def wearables(self):
+        return self._wearables.pop(0) if len(self._wearables) > 1 else self._wearables[0]
+
+    def alert(self, label=None):
+        self.alert_labels.append(label)
+        return self._alerts.pop(0)()
+
+
+def _device(ip, acks=0, heartbeats=0, **more):
+    return dict(ip=ip, acks=acks, heartbeats=heartbeats, **more)
+
+
+class ExampleScriptTests(_StubCase):
+    def example(self, name, *args, **env):
+        return _run([sys.executable, os.path.join(EXAMPLES_DIR, name + ".py")] + list(args), **env)
+
+    def alert_bodies(self):
+        return [json.loads(r["body"].decode("utf-8")) for r in self.srv.requests
+                if (r["method"], r["path"]) == ("POST", "/alert")]
+
+    def test_alert_from_your_app_sends_one_alert_per_approach(self):
+        r = self.example("alert_from_your_app", "--step", "0", HALOW_URL=self.url, HALOW_TOKEN=TOKEN)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(self.alert_bodies(), [{"label": DEMO_LABEL}] * 2)
+        self.assertEqual(r.stdout.count("sent (gateway time 1767225600123 ms)"), 2, r.stdout)
+
+    def test_alert_from_your_app_retries_a_429_once(self):
+        self.route("POST", "/alert", 429, {"error": "rate limited: one alert per 0.5 s"})
+        r = self.example("alert_from_your_app", "--step", "0", HALOW_URL=self.url, HALOW_TOKEN=TOKEN)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertEqual(len(self.alert_bodies()), 4, "two alerts, each tried twice")
+        self.assertEqual(r.stderr.count("FAILED"), 2, r.stderr)
+        self.assertIn("HTTP 429", r.stderr)
+
+    def test_alert_from_your_app_does_not_retry_other_errors(self):
+        r = self.example("alert_from_your_app", "--step", "0", HALOW_URL=self.url, HALOW_TOKEN="wrong")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertEqual(len(self.alert_bodies()), 2)
+        self.assertIn("HTTP 401", r.stderr)
+
+    def test_alert_from_your_app_bad_settings(self):
+        r = self.example("alert_from_your_app", HALOW_URL="ftp://example.invalid", HALOW_TOKEN=TOKEN)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        r = self.example("alert_from_your_app", "--step", "-1", HALOW_URL=self.url, HALOW_TOKEN=TOKEN)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertEqual(self.srv.requests, [])
+
+    def test_wearable_alerter_reports_every_failure_and_keeps_running(self):
+        mod = _load_example("alert_from_your_app")
+        results, done = [], threading.Event()
+
+        def boom():
+            raise RuntimeError("boom")
+
+        def rate_limited():
+            raise hc.HalowError("POST /alert: HTTP 429", 429)
+
+        def on_result(label, record, error):
+            results.append((label, record, type(error).__name__ if error else None))
+            if len(results) == 3:
+                done.set()
+            raise ValueError("a failing callback does not stop the alerter")
+
+        client = _ScriptedClient(alerts=[boom, rate_limited, lambda: {"ts_ms": 1}, lambda: {"ts_ms": 2}])
+        mod.WearableAlerter.RETRY_AFTER_S = 0.01
+        alerter = mod.WearableAlerter(client, on_result=on_result)
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            for label in ("a", "b", "c"):
+                alerter.alert(label)
+            self.assertTrue(done.wait(10), results)
+            alerter.close()
+        self.assertEqual(results, [("a", None, "RuntimeError"), ("b", {"ts_ms": 1}, None), ("c", {"ts_ms": 2}, None)])
+        self.assertEqual(client.alert_labels, ["a", "b", "b", "c"])
+        self.assertIn("on_result failed", err.getvalue())
+
+    def test_wearable_status_waits_for_each_wearable_to_answer(self):
+        mod = _load_example("wearable_status")
+        before = {"devices": [_device("192.168.12.143", heartbeats=4), _device("192.168.12.144", acks=1)]}
+        one = {"devices": [_device("192.168.12.143", heartbeats=5, device_id="wz-07", battery_percentage=87,
+                                   rssi=-62), _device("192.168.12.144", acks=1)]}
+        both = {"devices": [one["devices"][0], _device("192.168.12.144", acks=1, heartbeats=1)]}
+        lines = []
+        client = _ScriptedClient(wearables=[before, one, both])
+        self.assertEqual(mod.check(client, expect=1, wait_s=10, poll_s=0, out=lines.append), 0, lines)
+        self.assertEqual(client._wearables, [both], "it waited until both wearables answered")
+        table = "\n".join(lines)
+        self.assertRegex(table, r"wz-07 +192\.168\.12\.143 +87% +-62 dBm +0  answered")
+        self.assertRegex(table, r"\? +192\.168\.12\.144 +\? +\? +1  answered")
+        self.assertIn("2 of 2 wearable(s) answered", table)
+
+    def test_wearable_status_silent_wearable(self):
+        mod = _load_example("wearable_status")
+        quiet = {"devices": [_device("192.168.12.143", heartbeats=4)]}
+        lines = []
+        self.assertEqual(mod.check(_ScriptedClient(wearables=[quiet]), expect=1, wait_s=0.2, poll_s=0.05,
+                                   out=lines.append), 3, lines)
+        self.assertIn("silent", lines[-3])
+        self.assertIn("0 of 1 wearable(s) answered within 0.2 s", lines[-2])
+        lines = []
+        self.assertEqual(mod.check(_ScriptedClient(wearables=[quiet]), expect=0, wait_s=0, out=lines.append), 0)
+
+    def test_wearable_status_gateway_cannot_send(self):
+        mod = _load_example("wearable_status")
+        lines = []
+        client = _ScriptedClient(health={"ok": False, "error": "no HaLowLink address"}, wearables=[{}])
+        self.assertEqual(mod.check(client, out=lines.append), 1)
+        self.assertIn("cannot send: no HaLowLink address", lines[0])
+
+    def test_wearable_status_command(self):
+        r = self.example("wearable_status", "--expect", "0", "--wait", "0", HALOW_URL=self.url)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("0 of 2 wearable(s) answered within 0 s", r.stdout)
+        self.assertTrue(all(r["method"] == "GET" for r in self.srv.requests), "it never posts an alert")
+        r = self.example("wearable_status", "--wait", "0", HALOW_URL=self.url)
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.route("GET", "/health", 503, {"ok": False, "error": "listener stopped"})
+        r = self.example("wearable_status", HALOW_URL=self.url)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("listener stopped", r.stdout)
+        r = self.example("wearable_status", "--expect", "-1", HALOW_URL=self.url)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        r = self.example("wearable_status", HALOW_URL="ftp://example.invalid")
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

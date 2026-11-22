@@ -8,7 +8,7 @@ The alert gateway (setup A) exposes a small HTTP API on port `8080`. Your softwa
 | [`GET /wearables`](#get-wearables) | no | The wearables that have answered: ACK counts, battery, signal strength |
 | [`GET /health`](#get-health) (also `GET /`) | no | Whether the gateway can send right now |
 
-The response bodies below are real responses from halow-alert 0.1.0, captured on a test setup. Addresses and times were edited to show a typical deployment.
+The response bodies below are real responses from halow-alert, captured on a test setup. Addresses and times were edited to show a typical deployment.
 
 ## Contents
 
@@ -270,7 +270,7 @@ Whether the gateway can send right now. No token needed. `GET /` returns the sam
 ```json
 {
  "ok": true,
- "version": "0.1.0",
+ "version": "1.0.0",
  "egress": "192.168.12.50",
  "error": null,
  "group": "239.255.0.10:5000",
@@ -284,7 +284,7 @@ Whether the gateway can send right now. No token needed. `GET /` returns the sam
 ```json
 {
  "ok": false,
- "version": "0.1.0",
+ "version": "1.0.0",
  "egress": null,
  "error": "192.168.12.50 is not an address of this machine (Cannot assign requested address); is the HaLowLink plugged in and the address set? (see docs/NETWORK.md at github.com/clearobject/halow-alert-releases)",
  "group": "239.255.0.10:5000",
@@ -422,7 +422,7 @@ The gateway service is configured with environment variables: for Compose, in `.
 | `HALOW_LOG` | `/data/halow-alert.jsonl` in the image | The [JSONL log](ARCHITECTURE.md#what-the-gateway-logs). Empty turns it off (with Compose, `HALOW_LOG=` in `.env`). Keep it under `/data` in the container, which the Compose kit maps to `./data`. |
 | `HALOW_ALLOW_NO_TOKEN` | off | `1` lets the API listen beyond `127.0.0.1` without a token. Then anyone who can reach the port can set off the wearables, including any web page open in a browser on a machine that can reach it. Compose does not pass it, on purpose: the Compose kit always requires `HALOW_TOKEN`. |
 
-Three settings exist only as command-line options of the `serve` command. Pass them after the image name with `docker run` (`... ghcr.io/clearobject/halow-alert:0.1.0 serve --quiet`), or as `command: ["serve", "--quiet"]` in Compose:
+Three settings exist only as command-line options of the `serve` command. Pass them after the image name with `docker run` (`... ghcr.io/clearobject/halow-alert:1.0.0 serve --quiet`), or as `command: ["serve", "--quiet"]` in Compose:
 
 | Option | Default | Meaning |
 |---|---|---|

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: halow-alert gateway API
-  version: 0.1.0
+  version: 1.0.0
   description: |
     HTTP API of the halow-alert gateway service, which triggers ClearObject ClearZone
     HaLow wearables through a Morse Micro HaLowLink 2.
@@ -20,7 +20,8 @@ info:
       may be at most 65536 bytes.
     - Every JSON error body is `{"error": "<reason>"}`.
 
-    Version 0.1.0 is a pre-release that has not yet been verified with HaLow hardware.
+    Version 1.0.0 is tested in software against a stand-in wearable; it has not yet been
+    verified with HaLow hardware (the changelog lists the open points).
     Full documentation: https://github.com/clearobject/halow-alert-releases/blob/main/docs/HTTP-API.md
   contact:
     name: ClearObject
@@ -270,7 +271,7 @@ paths:
                 $ref: "#/components/schemas/Health"
               example:
                 ok: true
-                version: 0.1.0
+                version: 1.0.0
                 egress: 192.168.12.50
                 error: null
                 group: "239.255.0.10:5000"
@@ -287,7 +288,7 @@ paths:
                   summary: HALOW_IFACE is set, but the address is not on the host
                   value:
                     ok: false
-                    version: 0.1.0
+                    version: 1.0.0
                     egress: null
                     error: 192.168.12.50 is not an address of this machine (Cannot assign requested address); is the HaLowLink plugged in and the address set? (see docs/NETWORK.md at github.com/clearobject/halow-alert-releases)
                     group: "239.255.0.10:5000"
@@ -297,7 +298,7 @@ paths:
                   summary: No HALOW_IFACE, and the host has no 192.168.12.x address
                   value:
                     ok: false
-                    version: 0.1.0
+                    version: 1.0.0
                     egress: null
                     error: this machine reaches 192.168.12.1 via 192.0.2.23, which is not on the HaLowLink subnet; plug in the HaLowLink (USB-C or LAN port) or pass --iface
                     group: "239.255.0.10:5000"
@@ -307,7 +308,7 @@ paths:
                   summary: The reply listener has stopped
                   value:
                     ok: false
-                    version: 0.1.0
+                    version: 1.0.0
                     egress: 192.168.12.50
                     error: the wearable response listener stopped; restart the service
                     group: "239.255.0.10:5000"
@@ -552,7 +553,7 @@ components:
           description: true when the status is 200.
         version:
           type: string
-          example: 0.1.0
+          example: 1.0.0
         egress:
           type: string
           nullable: true

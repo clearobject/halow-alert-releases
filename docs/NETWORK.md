@@ -204,7 +204,7 @@ If Windows asks whether to allow your program (for example `python.exe`, `node.e
 **Linux gateway (setup A).** `doctor` checks the whole path and sends nothing to the wearables:
 
 ```bash
-docker run --rm --network host ghcr.io/clearobject/halow-alert:0.1.0 doctor
+docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 doctor
 ```
 
 Every row should say `PASS`, and `egress address` should be `192.168.12.50`. [Troubleshooting](TROUBLESHOOTING.md#doctor) explains each row. To check by hand:
