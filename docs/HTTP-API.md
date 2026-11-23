@@ -29,7 +29,7 @@ The response bodies below are real responses from halow-alert, captured on a tes
 - **Responses** are JSON (`Content-Type: application/json`), indented for reading. Every error body is `{"error": "<reason>"}`.
 - **Methods:** only `GET` and `POST`. Other methods, including `HEAD` and `OPTIONS`, get `501` with an HTML error page. The API sends no CORS headers, so call it from server-side code or a script, not from a web page in a browser.
 - **Connections:** the gateway answers with `HTTP/1.0` and closes the connection after each response. HTTP clients handle this by themselves.
-- **Request bodies** must come with a `Content-Length` header and be at most 64 KiB. Chunked transfer encoding is not supported: such a body is ignored, and the alert is sent with the default settings. All common clients send `Content-Length` for a string or byte body; see [C#](#c-sharp) for the one exception to watch for.
+- **Request bodies** must come with a `Content-Length` header and be at most 64 KiB. Chunked transfer encoding is not supported: such a body is ignored, and the alert is sent with the default settings. All common clients send `Content-Length` for a string or byte body; see [Calling the API](#calling-the-api) for the one exception to watch for, in .NET.
 - **Limits:** at most 64 simultaneous connections; a client that sends nothing for 10 s is disconnected.
 
 ## Authentication
@@ -338,7 +338,7 @@ The `error` texts you may see:
 
 ## Calling the API
 
-These examples read the gateway's URL from `HALOW_URL` (for example `http://192.0.2.10:8080`) and the token from `HALOW_TOKEN`, the same variables the integrations use. The [integrations](../integrations/README.md) have complete clients for [Python](../integrations/python/), [JavaScript](../integrations/javascript/), [C#](../integrations/csharp/) and [curl and PowerShell](../integrations/curl/).
+These examples read the gateway's URL from `HALOW_URL` (for example `http://192.0.2.10:8080`) and the token from `HALOW_TOKEN`, the same variables the [Python client](../integrations/README.md) uses. That client covers both setups, with error handling and the wearables' replies.
 
 **curl** (Linux, macOS; `curl.exe` on Windows):
 
@@ -374,33 +374,7 @@ with urllib.request.urlopen(req, timeout=10) as r:
 
 `urllib` raises `HTTPError` for `4xx` and `5xx`; its `read()` holds the JSON error body.
 
-**JavaScript** (Node.js 18 or later):
-
-```javascript
-const r = await fetch(`${process.env.HALOW_URL}/alert`, {
-  method: "POST",
-  headers: { Authorization: `Bearer ${process.env.HALOW_TOKEN}`, "Content-Type": "application/json" },
-  body: JSON.stringify({ label: "zone-3 intrusion" }),
-  signal: AbortSignal.timeout(10000),
-});
-console.log(r.status, await r.json());
-```
-
-<a id="c-sharp"></a>**C#** (.NET 8 or later; the [C# integration](../integrations/csharp/) also covers Unity):
-
-```csharp
-using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-var req = new HttpRequestMessage(HttpMethod.Post, Environment.GetEnvironmentVariable("HALOW_URL") + "/alert")
-{
-    Content = new StringContent("{\"label\": \"zone-3 intrusion\"}", System.Text.Encoding.UTF8, "application/json"),
-};
-req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-    "Bearer", Environment.GetEnvironmentVariable("HALOW_TOKEN"));
-var res = await http.SendAsync(req);
-Console.WriteLine($"{(int)res.StatusCode} {await res.Content.ReadAsStringAsync()}");
-```
-
-Use `StringContent` (or `ByteArrayContent`), which sends a `Content-Length`. `PostAsJsonAsync` and `JsonContent` can stream the body with chunked transfer encoding, which this version ignores: the alert would go out with the default settings, without your label.
+From any other language, send the same request with its HTTP library, with a `Content-Length` header (see [Request bodies](#conventions)). In .NET, for example, use `StringContent` (or `ByteArrayContent`): `PostAsJsonAsync` and `JsonContent` can stream the body with chunked transfer encoding, which this version ignores, so the alert would go out with the default settings, without your label.
 
 ## Service settings
 

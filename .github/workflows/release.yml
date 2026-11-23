@@ -111,9 +111,6 @@ jobs:
       TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
 
       - name: Build the kit zip
         run: |
@@ -131,7 +128,7 @@ jobs:
                    data/.keep docs integrations/README.md integrations/LICENSE tools/fake_wearable.py; do
             [ -e "$stage/$f" ] || fail "$f is missing from the kit"
           done
-          chmod 755 "$stage/setup-network-linux.sh" "$stage/tools/fake_wearable.py" "$stage/integrations/curl/alert.sh" \
+          chmod 755 "$stage/setup-network-linux.sh" "$stage/tools/fake_wearable.py" \
                     "$stage/integrations/python/halow_client.py" "$stage/integrations/python/example.py" \
                     "$stage/integrations/python/examples/alert_from_your_app.py" "$stage/integrations/python/examples/wearable_status.py"
           (cd "$RUNNER_TEMP/stage" && zip -r -X -q "$GITHUB_WORKSPACE/dist/$name.zip" "$name")
@@ -183,11 +180,9 @@ jobs:
           cd "$RUNNER_TEMP/kit/$name"
           python3 tools/fake_wearable.py --help > /dev/null
           bash -n setup-network-linux.sh
-          bash -n integrations/curl/alert.sh
-          test -x setup-network-linux.sh && test -x tools/fake_wearable.py && test -x integrations/curl/alert.sh
+          test -x setup-network-linux.sh && test -x tools/fake_wearable.py && test -x integrations/python/halow_client.py
           HALOW_TOKEN=smoke docker compose config --quiet
           python3 integrations/python/halow_client.py selftest
-          node integrations/javascript/example.mjs --selftest
           python3 "$GITHUB_WORKSPACE/.github/scripts/check_links.py" . \
             || echo "::warning::some relative links in the kit point to files that are not in the zip"
           # The stand-in wearable and the Python direct mode, from the unpacked kit, on loopback.

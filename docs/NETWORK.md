@@ -195,7 +195,7 @@ The container uses the host's network directly (`--network host`), so these host
 New-NetFirewallRule -DisplayName "HaLow wearable replies" -Direction Inbound -Protocol TCP -LocalPort 5001 -RemoteAddress 192.168.12.0/24 -Action Allow
 ```
 
-If Windows asks whether to allow your program (for example `python.exe`, `node.exe` or your app) on the network, allow it. Clicking **Cancel** creates a block rule for that program, which overrides the rule above; see [Troubleshooting](TROUBLESHOOTING.md#direct-mode).
+If Windows asks whether to allow your program (for example `python.exe` or your app) on the network, allow it. Clicking **Cancel** creates a block rule for that program, which overrides the rule above; see [Troubleshooting](TROUBLESHOOTING.md#direct-mode).
 
 **macOS:** if the firewall is on (System Settings → Network → Firewall) and asks whether your program may accept incoming connections, allow it.
 

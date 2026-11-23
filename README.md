@@ -134,7 +134,7 @@ On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for a different
 
 3. Optionally, to learn which wearables acknowledged, accept TCP connections on port 5001 and decode the reply. Allow TCP 5001 from `192.168.12.0/24` in your firewall.
 
-The [integrations](integrations/README.md) contain complete, tested examples for both modes, and the [wire protocol](docs/PROTOCOL.md) documents every byte.
+The [Python client](integrations/README.md) has complete, tested examples for both modes, and the [wire protocol](docs/PROTOCOL.md) documents every byte.
 
 ## Use it from Python
 
@@ -177,7 +177,7 @@ Complete programs to start from:
 | [`examples/alert_from_your_app.py`](integrations/python/examples/alert_from_your_app.py) | Alerts from inside your own program loop, such as a simulator: sent on a background thread so the loop never waits, once per event, with a retry when the gateway answers `429` |
 | [`examples/wearable_status.py`](integrations/python/examples/wearable_status.py) | A check before a session: can the gateway send, and which wearables answer, with battery and signal strength. Nothing buzzes. |
 
-The [Python client guide](integrations/python/README.md) documents every function and the `halow-client` command. JavaScript, C# and curl clients are in [`integrations/`](integrations/README.md).
+The [Python client guide](integrations/python/README.md) documents every function and the `halow-client` command, and the [integrations overview](integrations/README.md) explains both modes, the settings and the errors. From another language, call the [HTTP API](docs/HTTP-API.md#calling-the-api) directly.
 
 **No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like the real one, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented protocol; it does not prove the real wearable's behaviour.
 
@@ -209,11 +209,8 @@ The [Python client guide](integrations/python/README.md) documents every functio
 
 | Path | What it is |
 |---|---|
-| [`integrations/`](integrations/README.md) | Ready-made clients for your software, for both setups |
+| [`integrations/`](integrations/README.md) | The ready-made Python client for your software, for both setups |
 | [`integrations/python/`](integrations/python/) | Python 3.8 or later: one file to copy, or the package `clearobject-halow-client` for pip, with the `halow-client` command, and [examples](integrations/python/examples/) |
-| [`integrations/javascript/`](integrations/javascript/) | JavaScript (Node.js 18 or later) |
-| [`integrations/csharp/`](integrations/csharp/) | C# (.NET 8 or later; the library also builds for .NET Standard 2.1, so Unity 2021.2 or later) |
-| [`integrations/curl/`](integrations/curl/) | A curl script, and curl and PowerShell one-liners (gateway mode) |
 | [`tools/fake_wearable.py`](tools/fake_wearable.py) | Stand-in wearable for development without hardware |
 | [`docker-compose.yml`](docker-compose.yml) | Runs the gateway service from the published image |
 | [`.env.example`](.env.example) | The settings `docker-compose.yml` reads from `.env` |

@@ -67,7 +67,7 @@ body:
     id: integration
     attributes:
       label: Integration used, if any
-      placeholder: "integrations/python, integrations/csharp, my own code, ..."
+      placeholder: "integrations/python (halow-client), my own code, ..."
     validations:
       required: false
   - type: textarea

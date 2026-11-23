@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes for users of halow-alert are listed here: the container image `ghcr.io/clearobject/halow-alert`, the documentation, the integrations and the kit. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes for users of halow-alert are listed here: the container image `ghcr.io/clearobject/halow-alert`, the documentation, the Python client and the kit. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -39,11 +39,11 @@ GatewayClient("http://<gateway>:8080", token="<token>").alert(label="zone-3 intr
 - One `docker run` command that runs the gateway as a service (restart policy, log volume), with the commands to check, update and remove it, in the README.
 - Docker Compose kit, as an alternative: `docker-compose.yml`, which runs the published image with host networking, and `.env.example`.
 - `setup-network-linux.sh`: gives a Linux host the static address `192.168.12.50/24` on the HaLowLink, with no default route, over USB-C or the LAN port (NetworkManager).
-- Integrations for Python, JavaScript (Node.js), C# and curl or PowerShell, for both the HTTP API (setup A) and direct multicast (setup B), under the MIT License.
+- A Python client, `integrations/python/halow_client.py`, for both the HTTP API (setup A) and direct multicast (setup B), under the MIT License. From other languages, call the HTTP API directly: `docs/HTTP-API.md` has curl, PowerShell and Python examples.
 - Python package `clearobject-halow-client` 1.0.0: the Python client's `halow_client` module and the `halow-client` command, for Python 3.8 or newer, with no dependencies. The GitHub release attaches it as a wheel and an sdist, each with a SHA-256 file. It can also be installed with pip straight from this repository (`git+https://github.com/clearobject/halow-alert-releases@v1.0.0#subdirectory=integrations/python`). It is not published on PyPI.
 - Python examples: `example.py` (one alert, then wait for the ACK, through the gateway or directly), `examples/alert_from_your_app.py` (alerts from inside a program loop, on a background thread, with a retry on `429`) and `examples/wearable_status.py` (a check before a session: can the gateway send, and which wearables answer).
 - `tools/fake_wearable.py`: a standalone stand-in wearable, for developing without hardware.
-- Tests for every client, in the kit and the repository: Python (`unittest`), JavaScript (`node:test`) and C# (xUnit), with seeded fuzzing of the reply decoder and loopback tests of direct mode, and tests of `integrations/curl/alert.sh`. None of them reaches a wearable.
+- Tests for the Python client (`unittest`, in `integrations/python/tests/`), with seeded fuzzing of the reply decoder and loopback tests of direct mode. CI runs them against the source file and against the installed wheel, on Linux, macOS and Windows. None of them reaches a wearable.
 - Documentation: overview and quick starts, alerting architecture, network setup for Linux, macOS and Windows, HTTP API reference with an OpenAPI 3.0.3 description, wire protocol, troubleshooting, and the security and support policies.
 
 ### Security
@@ -52,7 +52,7 @@ GatewayClient("http://<gateway>:8080", token="<token>").alert(label="zone-3 intr
 - Wearable replies are accepted only from the HaLowLink network, `192.168.12.0/24`.
 - Limits: request bodies up to 64 KiB, 64 simultaneous HTTP connections, idle HTTP clients dropped after 10 s, 32 wearable replies in flight, each read for at most 5 s and 8 KiB.
 - The container runs as a non-root user.
-- The Python, JavaScript and C# clients and `alert.sh` never follow a redirect, so the token is sent only to the gateway address you configured.
+- The Python client never follows a redirect, so the token is sent only to the gateway address you configured.
 
 ### Known limitations
 
