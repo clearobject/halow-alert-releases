@@ -39,7 +39,7 @@ These are documented properties of the design, not vulnerabilities. The [securit
 - The alert protocol on the HaLowLink network has no authentication: anything on `192.168.12.0/24` can trigger the wearables. Access to that network is the control.
 - The HTTP API is plain HTTP. The token travels unencrypted; use the API on a trusted network and restrict TCP 8080 to your clients, or put a TLS reverse proxy in front of it.
 - `GET /health` and `GET /wearables` need no token.
-- A gateway started without a token (on `127.0.0.1`, or with `--allow-no-token`) accepts a plain `POST /alert` from any program on that machine, and from any web page open in a browser that can reach the port. Keep a token whenever a browser runs on such a machine.
+- A gateway started without a token (on `127.0.0.1`, or with `--allow-no-token`) accepts a plain `POST /alert` from any program on that machine (with `--allow-no-token`, from any machine that can reach the port), and from any web page open in a browser that can reach the port. Keep a token whenever a browser runs on such a machine.
 
 ## Supported versions
 

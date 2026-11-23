@@ -4,7 +4,7 @@
 
 **Make ClearObject ClearZone HaLow wearables alert from your own software.**
 
-ClearZone wearables (vests and handhelds) vibrate and sound when they receive an alert over a Wi-Fi HaLow (IEEE 802.11ah) network served by a Morse Micro HaLowLink 2. **halow-alert** is a small gateway service that lets any program, such as a simulator, a control application or a test script, trigger them with a single HTTP request, and that reports which wearables acknowledged. Everything runs on your local network: no cloud, no internet connection and no ClearObject Workzone camera system are needed. This repository holds the user documentation, ready-made integrations, the Docker Compose kit and the releases. The service itself ships as the container image `ghcr.io/clearobject/halow-alert`.
+ClearZone wearables (vests and handhelds) vibrate and sound when they receive an alert over a Wi-Fi HaLow (IEEE 802.11ah) network served by a Morse Micro HaLowLink 2. **halow-alert** is a small gateway service that lets any program, such as a simulator, a control application or a test script, trigger them with a single HTTP request, and that reports which wearables acknowledged. Everything runs on your local network: no cloud, no internet connection and no ClearObject Workzone camera system are needed. This repository holds the user documentation, a ready-made Python client, the Docker Compose kit and the releases. The service itself ships as the container image `ghcr.io/clearobject/halow-alert`.
 
 > [!NOTE]
 > **Version 1.0.0** has been tested in software on Linux, macOS and Windows, against a stand-in wearable that follows the documented protocol. It has not yet been verified with HaLow hardware: the [changelog](CHANGELOG.md) lists the points still to check. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
@@ -31,7 +31,7 @@ flowchart LR
 
 1. Your software calls `POST /alert` on the **alert gateway**, a Linux machine that is cabled to the HaLowLink.
 2. The gateway sends one UDP multicast datagram to `239.255.0.10:5000`. The HaLowLink carries it over the HaLow radio, and **every wearable on that network alerts**.
-3. Each wearable reports back over TCP port `5001` with an acknowledgement (ACK). Every 15 s the gateway also asks the wearables for a heartbeat (battery, signal strength), so `GET /wearables` always shows who is reachable.
+3. Each wearable reports back over TCP port `5001` with an acknowledgement (ACK). Every 15 s the gateway also asks the wearables for a heartbeat (battery, signal strength), so `GET /wearables` shows when each wearable last answered.
 
 In **direct mode** there is no gateway: the program that runs on the machine plugged into the HaLowLink sends the multicast datagram itself. It takes a few lines of code in any language.
 
@@ -117,7 +117,7 @@ curl http://<gateway>:8080/wearables   # who answered: ACK counts, battery, sign
 curl http://<gateway>:8080/health      # 200 when the gateway can send, 503 when it cannot
 ```
 
-On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for a different command), or use `Invoke-RestMethod`. Allow TCP 8080 from your client machines and TCP 5001 from `192.168.12.0/24` in the gateway's firewall ([how](docs/NETWORK.md#firewall)). The [HTTP API reference](docs/HTTP-API.md) documents every field and status code. To call the gateway from Python, see [Use it from Python](#use-it-from-python).
+The commands above are for bash. In Windows PowerShell, also set `$env:HALOW_URL='http://<gateway>:8080'` and send the alert with the PowerShell example in [Calling the API](docs/HTTP-API.md#calling-the-api); for the two `GET` lines, call `curl.exe` (plain `curl` is an alias for a different command). Allow TCP 8080 from your client machines and TCP 5001 from `192.168.12.0/24` in the gateway's firewall ([how](docs/NETWORK.md#firewall)). The [HTTP API reference](docs/HTTP-API.md) documents every field and status code. To call the gateway from Python, see [Use it from Python](#use-it-from-python).
 
 ## Quick start B: direct mode
 
@@ -179,7 +179,7 @@ Complete programs to start from:
 
 The [Python client guide](integrations/python/README.md) documents every function and the `halow-client` command, and the [integrations overview](integrations/README.md) explains both modes, the settings and the errors. From another language, call the [HTTP API](docs/HTTP-API.md#calling-the-api) directly.
 
-**No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like the real one, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented protocol; it does not prove the real wearable's behaviour.
+**No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like a wearable, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented protocol; it does not prove the real wearable's behaviour.
 
 ## Requirements
 

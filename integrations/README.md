@@ -53,7 +53,7 @@ The examples and the `halow-client` command read these environment variables. Th
 | `HALOW_GROUP`, `HALOW_PORT` | direct mode | `239.255.0.10`, `5000` | The alert group. Change them only for testing with the stand-in wearable. |
 | `HALOW_RESPONSE_PORT` | direct mode | `5001` | TCP port for the wearables' replies. |
 | `HALOW_FORMAT` | direct-mode example | `raw8` | `raw8`, `proto` or `both` (see [the protocol](../docs/PROTOCOL.md)). The gateway-mode examples do not send a format, so the gateway's setting applies. |
-| `HALOW_ACK_WAIT` | examples | `15` | Seconds an example waits for the ACK, from 0 to 3600. Any other value is a bad setting (exit code 2), checked before anything is sent. |
+| `HALOW_ACK_WAIT` | `example.py` | `15` | Seconds `example.py` waits for the ACK, from 0 to 3600. Any other value is a bad setting (exit code 2), checked before anything is sent. |
 
 The client ignores HTTP proxy settings, because the gateway is on your local network.
 
@@ -70,7 +70,7 @@ In gateway mode, the client turns a failed call into one error, `HalowError`, wi
 | `503` | From `GET /health`: the gateway cannot send right now | The `error` field says why. `health()` returns this body instead of raising. |
 | `400`, `413` | Malformed request | The `error` field says what is wrong. |
 
-The examples exit with `0` when the alert was sent and a wearable ACKed it, `3` when the alert was sent but no ACK came within `HALOW_ACK_WAIT` seconds, `1` when the alert failed, and `2` for bad settings (for example an egress address that is not on this machine, or TCP 5001 already in use).
+`example.py` exits with `0` when the alert was sent and a wearable ACKed it, `3` when the alert was sent but no ACK came within `HALOW_ACK_WAIT` seconds, `1` when the alert failed, and `2` for bad settings (for example an egress address that is not on this machine, or TCP 5001 already in use).
 
 ## Try it without hardware
 
@@ -89,6 +89,7 @@ Direct mode on Linux or macOS, from the repository root:
 python3 tools/fake_wearable.py --iface 127.0.0.1 --group 239.255.77.2 --port 15010 --response-port 15011 --seconds 0 &
 export HALOW_EGRESS=127.0.0.1 HALOW_GROUP=239.255.77.2 HALOW_PORT=15010 HALOW_RESPONSE_PORT=15011
 python3 integrations/python/example.py --direct
+kill %1                                         # stop the stand-in wearable
 ```
 
 Direct mode on **Windows** (PowerShell), from the repository root. In one window, start the stand-in wearable (use `python` if `py` is missing; if Windows Firewall asks, allow it):
@@ -106,7 +107,7 @@ py integrations\python\example.py --direct
 
 The CI job `windows-direct` runs this example on Windows against the stand-in wearable.
 
-Gateway mode needs a Linux host with Docker Engine. Run the gateway image on loopback with a second stand-in wearable:
+Gateway mode needs a Linux host with Docker Engine running as root (not Docker Desktop, not rootless Docker). Run the gateway image on loopback with a second stand-in wearable:
 
 ```bash
 python3 tools/fake_wearable.py --iface 127.0.0.1 --group 239.255.77.1 --port 15000 --response-port 15001 --seconds 0 &
@@ -114,14 +115,16 @@ docker run -d --name halow-dev --network host \
   -e HALOW_IFACE=127.0.0.1 -e HALOW_ROUTER=127.0.0.1 -e HALOW_HTTP=127.0.0.1:18080 \
   -e HALOW_GROUP=239.255.77.1 -e HALOW_PORT=15000 -e HALOW_RESPONSE_PORT=15001 \
   -e HALOW_TOKEN=dev-only ghcr.io/clearobject/halow-alert:1.0.0
+sleep 2                                         # give the gateway a moment to start
 export HALOW_URL=http://127.0.0.1:18080 HALOW_TOKEN=dev-only
 python3 integrations/python/example.py
 docker rm -f halow-dev
+kill %1                                         # stop the stand-in wearable
 ```
 
-The repository's CI runs these same steps on every change.
+The repository's CI runs the same test on every change, with the Compose kit in place of `docker run`.
 
-To test gateway-mode code that runs on Windows or macOS, run the block above on a Linux machine on your network, with `-e HALOW_HTTP=0.0.0.0:18080 -e HALOW_TOKEN=<long random token>` in place of the loopback address and `dev-only`. Allow TCP 18080 from your workstation in that machine's firewall, then set `HALOW_URL=http://<linux-machine>:18080` and `HALOW_TOKEN` on your workstation. Without any Linux host, only direct mode can be tried.
+To test gateway-mode code that runs on Windows or macOS, run the first two commands of the block above (the stand-in wearable and `docker run`) on a Linux machine on your network, with `-e HALOW_HTTP=0.0.0.0:18080 -e HALOW_TOKEN=<long random token>` in place of the loopback address and `dev-only`. Allow TCP 18080 from your workstation in that machine's firewall, then set `HALOW_URL=http://<linux-machine>:18080` and `HALOW_TOKEN` on your workstation. Without any Linux host, only direct mode can be tried.
 
 ## Wire formats
 
@@ -133,4 +136,4 @@ The client puts the same bytes on the wire as the gateway. [`testdata/vectors.js
 
 ## Status
 
-Version 1.0.0. The client is tested in software only: its unit and integration tests (`unittest`, in [`python/tests/`](python/tests/)) run in CI against the source file and against the package installed from its wheel, on Linux (Python 3.8 and 3.13), macOS and Windows; and CI runs the examples against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows. It has not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 1.0.0. The client is tested in software only: its unit and integration tests (`unittest`, in [`python/tests/`](python/tests/)) run in CI against the source file on Linux, and against the package installed from its wheel on Linux (Python 3.8 and 3.13), macOS and Windows; and CI runs the examples against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows. It has not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.

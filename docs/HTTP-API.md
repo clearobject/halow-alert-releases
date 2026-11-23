@@ -254,7 +254,7 @@ Before any wearable has answered: `{"devices": [], "recent": []}`.
 | `event` | `wearable_ack` or `wearable_heartbeat` |
 | `ts_ms` | When the reply arrived at the gateway |
 | `ip` | The wearable's address |
-| `timestamp_ms` | ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat request's timestamp, echoed back, so `ts_ms - timestamp_ms` is the round-trip time. |
+| `timestamp_ms` | ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat request's timestamp, echoed back, so `ts_ms - timestamp_ms` is the round-trip time; `0` for a heartbeat the wearable sent on its own, without a request. |
 | `code` | `ACK` or `HEARTBEAT` |
 | `ack_success` | ACK only: `true` when the wearable reports success |
 | `heartbeat` | Heartbeat only: `device_id`, `battery_percentage`, `rssi`, `uptime_seconds`, `app_state`, `device_state` |
@@ -340,7 +340,7 @@ The `error` texts you may see:
 
 These examples read the gateway's URL from `HALOW_URL` (for example `http://192.0.2.10:8080`) and the token from `HALOW_TOKEN`, the same variables the [Python client](../integrations/README.md) uses. That client covers both setups, with error handling and the wearables' replies.
 
-**curl** (Linux, macOS; `curl.exe` on Windows):
+**curl** (Linux, macOS; on Windows, use the PowerShell example below):
 
 ```bash
 curl -sS -X POST "$HALOW_URL/alert" \
@@ -384,7 +384,7 @@ The gateway service is configured with environment variables: for Compose, in `.
 |---|---|---|
 | `HALOW_TOKEN` | empty | The bearer token for `POST /alert`. Required, unless `HALOW_HTTP` is on `127.0.0.1` or `HALOW_ALLOW_NO_TOKEN=1`. Surrounding spaces are removed. |
 | `HALOW_HTTP` | `0.0.0.0:8080` | Where the API listens: `host:port` or just `port`. Change the port here, not with `--http`, because the container's health check reads this variable. |
-| `HALOW_IFACE` | empty (the Compose kit sets `192.168.12.50`) | The gateway's sending address on the HaLowLink network, or an interface name (Linux). Empty: use the local address that reaches `HALOW_ROUTER`, if it is on that `/24`. With Compose, `HALOW_IFACE=` (empty) in `.env` selects this. |
+| `HALOW_IFACE` | empty (the quick start's `docker run` and the Compose kit set `192.168.12.50`) | The gateway's sending address on the HaLowLink network, or an interface name (Linux). Empty: use the local address that reaches `HALOW_ROUTER`, if it is on that `/24`. With Compose, `HALOW_IFACE=` (empty) in `.env` selects this. |
 | `HALOW_ROUTER` | `192.168.12.1` | The HaLowLink's address. Wearable replies are accepted from its `/24` only. |
 | `HALOW_GROUP` | `239.255.0.10` | Multicast group. |
 | `HALOW_PORT` | `5000` | Multicast port. |
@@ -393,7 +393,7 @@ The gateway service is configured with environment variables: for Compose, in `.
 | `HALOW_BURST_SECONDS` | `0` | Default burst length for `POST /alert`, 0 to 5. |
 | `HALOW_HEARTBEAT` | `15` | Seconds between heartbeat requests, in whole seconds; `0` turns them off. |
 | `HALOW_TTL` | `4` | Multicast TTL, 1 to 255. |
-| `HALOW_LOG` | `/data/halow-alert.jsonl` in the image | The [JSONL log](ARCHITECTURE.md#what-the-gateway-logs). Empty turns it off (with Compose, `HALOW_LOG=` in `.env`). Keep it under `/data` in the container, which the Compose kit maps to `./data`. |
+| `HALOW_LOG` | `/data/halow-alert.jsonl` in the image | The [JSONL log](ARCHITECTURE.md#what-the-gateway-logs). Empty turns it off (with Compose, `HALOW_LOG=` in `.env`). Keep it under `/data` in the container, which the quick start's `docker run` keeps in the volume `halow-alert-data` and the Compose kit maps to `./data`. |
 | `HALOW_ALLOW_NO_TOKEN` | off | `1` lets the API listen beyond `127.0.0.1` without a token. Then anyone who can reach the port can set off the wearables, including any web page open in a browser on a machine that can reach it. Compose does not pass it, on purpose: the Compose kit always requires `HALOW_TOKEN`. |
 
 Three settings exist only as command-line options of the `serve` command. Pass them after the image name with `docker run` (`... ghcr.io/clearobject/halow-alert:1.0.0 serve --quiet`), or as `command: ["serve", "--quiet"]` in Compose:

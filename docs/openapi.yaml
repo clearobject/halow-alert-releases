@@ -510,7 +510,7 @@ components:
           format: int64
           description: |
             ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat
-            request's timestamp, echoed back (ts_ms minus timestamp_ms is the round-trip time).
+            request's timestamp, echoed back (ts_ms minus timestamp_ms is the round-trip time), or 0 for a heartbeat sent without a request.
         code:
           type: string
           enum: [ACK, HEARTBEAT]

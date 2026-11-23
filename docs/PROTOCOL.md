@@ -49,7 +49,7 @@ Example. 2026-01-01T00:00:00.123Z is `1767225600.123` s:
 How to produce it:
 
 ```python
-struct.pack("<d", time.time())                                                          # Python
+struct.pack("<d", time.time())
 ```
 
 This is the format the ClearObject Workzone system sends. halow-alert always writes it little-endian, whatever the machine's byte order.
@@ -227,7 +227,7 @@ The gateway multicasts a HEARTBEAT_REQ when it starts and then every 15 s (`HALO
 
 ## Implementing direct mode
 
-To drive the wearables without the gateway, your program has to do what the gateway does. The [integrations](../integrations/README.md) implement this for several languages.
+To drive the wearables without the gateway, your program has to do what the gateway does. The [Python client](../integrations/README.md#pick-a-mode) does this in its direct mode, except the rate limit and the regular heartbeat requests, which are up to you.
 
 **Sending (required):**
 
@@ -252,7 +252,7 @@ To drive the wearables without the gateway, your program has to do what the gate
 | Claim | Status | Evidence |
 |---|---|---|
 | A `raw8` datagram to `239.255.0.10:5000` makes every wearable on the network alarm | **Verified** on hardware, in production | The ClearObject Workzone alert sender and its test-alert tool send exactly this. |
-| Wearables answer `raw8` alerts with an ACK over TCP 5001 | **Verified** on hardware, in production | The operator app's HaLow monitor logs these ACKs for Workzone alerts. |
+| Wearables answer `raw8` alerts with an ACK over TCP 5001 | **Verified** on hardware, in production | The operator app's HaLow monitor logs these ACKs for ClearObject Workzone alerts. |
 | The `proto` ALERT and HEARTBEAT_REQ formats | **In production use** by the operator app (its test alert and its heartbeat requests). Not yet sent from halow-alert to hardware | Operator app test-alert command and HaLow monitor. |
 | `DeviceResponse` field numbers and types | **Verified** against the operator app's schema and its byte-level tests | Operator app HaLow protocol definitions. |
 | USB-C and the LAN port are the same `192.168.12.0/24` network in Router mode | **Vendor documentation** | HaLowLink 2 user guide, port table. Not yet tested with halow-alert. |
@@ -269,8 +269,8 @@ To drive the wearables without the gateway, your program has to do what the gate
 These are ClearObject sources, named by role:
 
 - **ClearObject Workzone alert sender:** the production sender (`raw8`, 0.5 s debounce).
-- **Workzone test-alert tool:** the command-line ring test (`raw8`).
-- **Workzone configuration defaults:** the alert settings (group, ports, sender address, heartbeat interval, offline timeout).
+- **ClearObject Workzone test-alert tool:** the command-line ring test (`raw8`).
+- **ClearObject Workzone configuration defaults:** the alert settings (group, ports, sender address, heartbeat interval, offline timeout).
 - **Operator app HaLow protocol definitions, HaLow monitor and test-alert command:** the `proto` schema, ACK and heartbeat handling, and the test alert.
 - **Operator app wearable simulator:** a software wearable used to test the operator app.
 - **Protocol proof-of-concept:** an early gateway and wearable emulator for the ACK protocol.
