@@ -62,9 +62,9 @@ print(gw.health())                              # {"ok": true, "egress": "192.16
 try:
     record = gw.alert(label="zone-3 intrusion") # optional: fmt="proto", burst_seconds=1.0
 except HalowError as e:
-    if e.status == 429:
-        ...                                     # one alert per 0.5 s: retry shortly
-    raise
+    if e.status != 429:
+        raise                                   # 401 token, 500 HaLowLink, not reached, ...
+    ...                                         # 429: one alert per 0.5 s: retry shortly
 print(gw.wearables()["devices"])                # ACKs, battery, RSSI per wearable
 ```
 
@@ -96,7 +96,7 @@ import time
 
 from halow_client import ResponseListener, send_heartbeat_request, subnet_prefix
 
-def on_reply(reply):                            # runs on the listener's thread
+def on_reply(reply):                            # runs on a background thread; calls can overlap
     if reply["code"] == "HEARTBEAT":
         hb = reply["heartbeat"]
         print(f"{reply['ip']} {hb['device_id']}: battery {hb['battery_percentage']}%, {hb['rssi']} dBm")
@@ -117,10 +117,10 @@ finally:
 |---|---|
 | `send_direct(egress="", fmt="raw8", group="239.255.0.10", port=5000, ttl=4, burst_seconds=0.0, burst_interval_ms=100)` | Sends one alert (`raw8`, `proto` or `both`) and returns a record like the gateway's. `burst_seconds` resends the same bytes for that long (at most 5 s). Raises `OSError` when `egress` is not an address of this machine. |
 | `send_heartbeat_request(egress="", group="239.255.0.10", port=5000, ttl=4)` | Asks every wearable to report in. Nothing buzzes. Returns the request's timestamp (ms), which each heartbeat echoes. |
-| `ResponseListener(port=5001, bind="0.0.0.0", allow_prefix="", on_response=None)` | Listens for replies in a background thread. Use `.start()` and `.stop()`, or `with`. `.responses` holds every reply, and `.wait_for(code, timeout, after_ms)` waits for one. `on_response(reply)` runs on the listener's thread. |
-| `encode_raw8(t)`, `encode_gateway_message(ms, command)`, `decode_device_response(data)` | The wire formats. |
+| `ResponseListener(port=5001, bind="0.0.0.0", allow_prefix="", on_response=None)` | Listens for replies in a background thread. Use `.start()` and `.stop()`, or `with`. `.responses` holds the last 1000 replies, and `.wait_for(code, timeout, after_ms)` waits for one. `on_response(reply)` runs on a background thread, one per reply, so two calls can overlap. |
+| `encode_raw8(t)`, `encode_gateway_message(timestamp_ms, command)`, `decode_device_response(buf)` | The wire formats. |
 
-Of the environment variables, these functions read only `HALOW_EGRESS`, and only when you pass no `egress`. The alert group and port and the reply port are arguments with the HaLowLink's values as defaults: `HALOW_GROUP`, `HALOW_PORT` and `HALOW_RESPONSE_PORT` change only the `halow-client` command and the example. To test against the stand-in wearable, pass its settings yourself, as in [Try it without hardware](#try-it-without-hardware).
+Of the environment variables, these functions read only `HALOW_EGRESS`, and only when you pass no `egress`. The alert group and port and the reply port are arguments with the HaLowLink's values as defaults: `HALOW_GROUP`, `HALOW_PORT` and `HALOW_RESPONSE_PORT` change only the `halow-client` command and the example. To test against the stand-in wearable, pass its settings yourself, as in [Try it without hardware](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/README.md#try-it-without-hardware).
 
 ## Command line
 
@@ -178,7 +178,7 @@ python3 example.py --selftest                                                  #
 
 Two more programs in [`examples/`](https://github.com/clearobject/halow-alert-releases/tree/v1.0.0/integrations/python/examples), in the repository and the kit, not in the package. Both use gateway mode and read `HALOW_URL` and `HALOW_TOKEN`. They find `halow_client.py` one folder up, or use the installed package.
 
-- [`alert_from_your_app.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/alert_from_your_app.py): the class `WearableAlerter`, to copy into your program. `alert(label)` returns at once and the alert goes out on a background thread, so a simulator or control loop never waits for the network. On `429` it tries once more after 0.6 s; any failure goes to a callback instead of raising into your loop. The demo alerts once each time a made-up distance drops below 5 m, so it sends two alerts:
+- [`alert_from_your_app.py`](https://github.com/clearobject/halow-alert-releases/blob/v1.0.0/integrations/python/examples/alert_from_your_app.py): the class `WearableAlerter`, to copy into your program together with `_STOP`, `print_result` and the imports from the same file. `alert(label)` returns at once and the alert goes out on a background thread, so a simulator or control loop never waits for the network. On `429` it tries once more after 0.6 s; any failure goes to a callback instead of raising into your loop. The demo alerts once each time a made-up distance drops below 5 m, so it sends two alerts:
 
   ```bash
   HALOW_URL=http://192.0.2.10:8080 HALOW_TOKEN=<token> python3 examples/alert_from_your_app.py

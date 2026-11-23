@@ -56,7 +56,7 @@ Both send the same bytes. Everything stays on the local link: no part of the sys
 | **Alert gateway host** | Linux (amd64 or arm64), cabled to the HaLowLink by USB-C or its LAN port | Holds the static address `192.168.12.50/24` on the HaLowLink interface, with no default route. Runs Docker Engine as root. |
 | **halow-alert service** | The `serve` command of the container, with host networking | Checks the token and the request. Enforces the rate limit. Encodes the alert and multicasts it from `192.168.12.50`. Sends a heartbeat request every 15 s. Accepts wearable replies on TCP 5001. Keeps a roster of wearables. Reports its health. Writes a JSONL log. |
 | **HaLowLink 2** | Morse Micro router, Router with HaLow Access Point mode | Serves `192.168.12.0/24` and hands out addresses to the wearables (DHCP). Bridges its LAN, USB-C and HaLow interfaces, which carries the multicast onto the radio. Runs the HaLow access point (WPA3-SAE). |
-| **ClearZone wearables** | On the HaLow network, `192.168.12.x` | Listen for the alert group. Alarm (vibration and sound) on an alert, and drop repeats of an alert they already acted on. Answer with an ACK, and answer heartbeat requests, over TCP 5001. |
+| **ClearZone wearables** | On the HaLow network, `192.168.12.x` | Listen for the alert group. Alarm (vibration and sound) on an alert, and drop repeats of an alert they already acted on (documented for `proto`, not yet known for `raw8`). Answer with an ACK, and answer heartbeat requests, over TCP 5001. |
 | **Direct-mode program** | The machine plugged into the HaLowLink, at `192.168.12.50` | Does the gateway's network job itself: the multicast, and optionally the TCP 5001 listener. |
 
 ClearObject sets up the HaLowLink (mode, admin password, its HaLow network) and joins the wearable to it before handover.
@@ -79,13 +79,13 @@ flowchart TB
     hb --> tx
     rx --> roster
     http -- "GET /wearables" --> roster
-    tx --> log
+    tx -- "alerts only" --> log
     rx --> log
 ```
 
 - The sender sets the outgoing multicast interface (`IP_MULTICAST_IF`) to the gateway's HaLowLink address on every socket, so it never depends on the multicast routing table.
 - The service looks up that address **on every request and every heartbeat**. When the HaLowLink is unplugged, or boots after the service, the service reports the problem and recovers by itself once the address is back. No restart is needed.
-- With `HALOW_IFACE` set (the Compose kit sets `192.168.12.50`), that exact address must be present on the host. Without it, the service picks the local address the host uses to reach `192.168.12.1`, and accepts it only if it is on `192.168.12.x`.
+- With `HALOW_IFACE` set (the quick start's `docker run` and the Compose kit set `192.168.12.50`), that exact address must be present on the host. Without it, the service picks the local address the host uses to reach `192.168.12.1`, and accepts it only if it is on `192.168.12.x`.
 - The roster lives in memory and starts empty when the service restarts. The JSONL log persists.
 
 ## Addresses and ports
@@ -142,7 +142,7 @@ sequenceDiagram
     participant W as Wearable 192.168.12.x
     G->>H: UDP multicast alert (raw8: 8-byte timestamp)
     H->>W: forwarded over the HaLow radio
-    Note over W: ignores the alert if it already acted on this timestamp
+    Note over W: ignores the alert if it already acted on this timestamp (documented for proto, not yet known for raw8)
     W->>W: alarm (vibration and sound)
     Note over W: ACK after the alarm ends or is silenced (documented, not yet measured)
     W->>G: TCP connect to port 5001, one DeviceResponse ACK, close
@@ -181,7 +181,7 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 | Clock | The alert carries the gateway's clock. Keep it moving forward: an alert stamped earlier than the last one a wearable acted on may be ignored, for example after the clock is set back. | Inferred |
 | Evidence of delivery | The wearable's ACK over TCP 5001. It arrives after the alarm ends or is silenced, so allow several seconds. Use `last_ack_ms` and `acks` in `GET /wearables`. | Documented, not yet measured |
 | Matching ACKs to alerts | ACKs carry no alert ID and no device ID. Identify the wearable by its IP address (heartbeats map the address to a `device_id`), and match by time: the ACKs that arrive after alert N and before alert N+1 belong to alert N. | Verified against the schema |
-| ACK destination | The wearable connects back to the address the alert came from. Use `192.168.12.50`, the address ClearObject's own systems send from, so this holds either way. | Inferred |
+| ACK destination | The wearable connects back to the address the alert came from. Use `192.168.12.50`, the address ClearObject's own systems send from. Whether the wearables reply to a fixed address instead is not yet verified. | Inferred |
 | Rate limit | One accepted alert per 0.5 s; sooner requests get `429` and are not sent. Failed requests and the copies inside a burst do not count. The ClearObject Workzone system uses the same limit. In direct mode, keep to it yourself. | Verified in software |
 | Liveness | Heartbeat requests every 15 s keep `last_seen_ms` current. Treat a wearable as offline after 60 s without a reply, as the ClearObject Workzone system does. | Verified in software |
 | State | The roster is in memory and is lost on restart. The JSONL log is the durable record. | Verified in software |
@@ -199,7 +199,7 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 | **Alerts faster than 0.5 s** | The later one is refused. | `429`; retry after 0.5 s if the first alert does not cover it. | Verified in software |
 | **TCP 5001 already taken at startup** (another listener on the host) | The service exits with code 2: `Address already in use`. Docker restarts it until the port is free. | The container keeps restarting. | Verified in software |
 | **Reply listener stops** | Keeps serving HTTP. | `/health` returns `503`: "the wearable response listener stopped; restart the service". | By design |
-| **A VPN or another network owns `192.168.12.0/24`** | Alerts may still leave (the interface is pinned), but replies are routed into the VPN. | No ACKs or heartbeats; `doctor` fails its route check. See [VPNs](NETWORK.md#vpns). | By design |
+| **A VPN or another network owns `192.168.12.0/24`** | Alerts may still leave (the interface is pinned), but replies are routed into the VPN. | No ACKs or heartbeats; `doctor` fails its `egress address` or `route to HaLowLink` row. See [VPNs](NETWORK.md#vpns). | By design |
 | **A host outside `192.168.12.0/24` connects to TCP 5001** | Closes the connection unread. | A `wearable_rejected` log line, at most once a minute per address. | Verified in software |
 | **Malformed or unexpected reply** | Ignores it and prints one line; the listener keeps running. | Nothing in the roster. | Verified in software |
 | **Overload** | More than 64 HTTP connections at once, or more than 32 replies in flight: the extra connections are closed. Idle HTTP clients are dropped after 10 s. | Connection closed without a response. | By design |
@@ -208,7 +208,7 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 
 **Two trust boundaries.**
 
-1. **The HTTP API (setup A).** `POST /alert` needs `Authorization: Bearer <token>`. The service refuses to start on anything but `127.0.0.1` without a token (unless you explicitly pass `--allow-no-token`), and refuses the placeholder token `CHANGE-ME`. The token is compared in constant time and never logged. `GET /health` and `GET /wearables` need no token; they reveal wearable addresses, device IDs, battery and signal strength to anyone who can reach the port. The API speaks plain HTTP, so the token is visible on the wire: use it on a network you trust, and allow TCP 8080 only from your client machines in the host firewall. If you need encryption, put a TLS reverse proxy on the gateway in front of it. The API sends no CORS headers, so a web page in a browser cannot call it with your token. Without a token (a gateway on `127.0.0.1`, or `--allow-no-token`), none is needed: any program on that machine, and any web page open in a browser that can reach the port, can send a plain `POST /alert` and set off the wearables. Keep a token whenever a browser runs on a machine that can reach the API.
+1. **The HTTP API (setup A).** `POST /alert` needs `Authorization: Bearer <token>`. The service refuses to start on anything but `127.0.0.1` without a token (unless you explicitly pass `--allow-no-token`), and refuses the placeholder token `CHANGE-ME`. The token is compared in constant time and never logged. `GET /health` and `GET /wearables` need no token; they reveal wearable addresses, device IDs, battery and signal strength to anyone who can reach the port. The API speaks plain HTTP, so the token is visible on the wire: use it on a network you trust, and allow TCP 8080 only from your client machines in the host firewall. If you need encryption, put a TLS reverse proxy on the gateway in front of it. The API sends no CORS headers, so a web page in a browser cannot call it with your token. Without a token (a gateway on `127.0.0.1`, or `--allow-no-token`), none is needed: any program on that machine (with `--allow-no-token`, on any machine that can reach the port), and any web page open in a browser that can reach the port, can send a plain `POST /alert` and set off the wearables. Keep a token whenever a browser runs on a machine that can reach the API.
 2. **The HaLowLink network (`192.168.12.0/24`).** The alert protocol itself has **no authentication**: anything on that network can send the multicast and set off every wearable. Access to it is controlled by:
    - the HaLow radio, which uses WPA3-SAE with a passphrase ClearObject gives you separately;
    - physical access to the HaLowLink's USB-C and LAN ports. Never connect the LAN port to another network;
@@ -227,7 +227,7 @@ See [SECURITY.md](../SECURITY.md) for how to report a vulnerability.
 
 ## What the gateway logs
 
-**The JSONL log.** One JSON object per line, appended to the file named by `HALOW_LOG`. The container writes `/data/halow-alert.jsonl`, which the Compose kit maps to `./data/halow-alert.jsonl` next to `docker-compose.yml`. The service opens the file for each line, so you can move or delete it at any time; the next event starts a new file. Nothing rotates it for you. One wearable answering heartbeats every 15 s adds roughly 1.4 MB a day.
+**The JSONL log.** One JSON object per line, appended to the file named by `HALOW_LOG`. The container writes `/data/halow-alert.jsonl`, which the quick start's `docker run` keeps in the volume `halow-alert-data` and the Compose kit maps to `./data/halow-alert.jsonl` next to `docker-compose.yml`. The service opens the file for each line, so you can move or delete it at any time; the next event starts a new file. Nothing rotates it for you. One wearable answering heartbeats every 15 s adds roughly 1.4 MB a day.
 
 | `event` | When | Fields |
 |---|---|---|
@@ -248,7 +248,7 @@ From these you can measure the **ACK delay** (`ts_ms` of `wearable_ack` minus `t
 
 **The container output** (`docker logs halow-alert`, or `docker compose logs` with the Compose kit):
 
-- standard output: the start-up line (listen address, token required or not, group, sending address), one line per ACK and heartbeat (`--quiet` turns these off), and a `WARNING` at start-up when the HaLowLink address is missing;
+- standard output: the start-up line (listen address, token required or not, group, sending address), one line per ACK and heartbeat and a line for a rejected connection, at most once a minute per address (`--quiet` turns these off), one line per reply it cannot decode or ignores (even with `--quiet`), and a `WARNING` at start-up when the HaLowLink address is missing;
 - standard error: one access line per HTTP request, such as `http 192.0.2.10 "POST /alert HTTP/1.1" 200 -` (also turned off by `--quiet`), and errors such as `heartbeat request failed: ...`.
 
 Not logged anywhere: tokens, request headers, heartbeat requests sent, and request bodies other than the label.

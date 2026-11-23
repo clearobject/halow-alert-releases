@@ -37,7 +37,7 @@ flowchart LR
 | Gateway (router) | **none**: leave it empty |
 | DNS | none |
 | IPv6 | not needed |
-| Multicast route | `239.0.0.0/8` on the HaLowLink interface (optional; the gateway and the integrations pin the interface themselves) |
+| Multicast route | `239.0.0.0/8` on the HaLowLink interface (optional; the gateway and the Python client pin the interface themselves) |
 
 Your machine keeps its normal network connection, with its internet access and default route, for everything else.
 
@@ -47,7 +47,7 @@ ClearObject configures each unit before handover:
 
 - the HaLowLink 2 is in **Router with HaLow Access Point** mode (the factory default), at `192.168.12.1/24`, and serves addresses to the wearables;
 - the wearable is joined to the HaLowLink's HaLow network (WPA3-SAE);
-- check that the HaLowLink's 2.4 GHz Wi-Fi access point is off, and turn it off if it is not;
+- the HaLowLink's 2.4 GHz Wi-Fi access point is off (check this on the admin page, and turn it off if it is on);
 - you receive the HaLowLink admin password and the HaLow network details separately.
 
 You do not need to change any of this. The HaLowLink admin page is at `https://192.168.12.1` (HTTPS only; your browser warns about its self-signed certificate). Its **Home** page lists the joined wearables in the **Connected Devices** card, and their `192.168.12.x` addresses in the **Local Network** card.
@@ -99,7 +99,7 @@ It ends by pinging the HaLowLink and printing `HaLowLink 192.168.12.1 answers`.
 - it finds several, for example a USB Ethernet dongle or a dock. It lists them; run `sudo ./setup-network-linux.sh eth <interface>` with the HaLowLink's adapter, which is the one that appears when you plug the HaLowLink in;
 - the adapter carries this machine's default route through something other than the HaLowLink, which means it is probably your uplink.
 
-`eth` makes the same default-route check. Optional environment variables: `HALOW_ADDR` (default `192.168.12.50/24`), `HALOW_ROUTER` (default `192.168.12.1`), and `HALOW_FORCE=1` to use an interface that carries the default route anyway.
+`eth` makes the same default-route check. Optional environment variables: `HALOW_ADDR` (default `192.168.12.50/24`), `HALOW_ROUTER` (default `192.168.12.1`), and `HALOW_FORCE=1` to use an interface that carries the default route anyway. Put them after `sudo`, which drops variables set before it: `sudo HALOW_FORCE=1 ./setup-network-linux.sh eth eth1`.
 
 ### Linux without NetworkManager
 
@@ -162,7 +162,7 @@ New-NetIPAddress -InterfaceAlias "Ethernet 3" -IPAddress 192.168.12.50 -PrefixLe
 
 Replace `Ethernet 3` with your adapter's name, and do not add `-DefaultGateway`. Or use the control panel: run `ncpa.cpl`, open the adapter's **Properties → Internet Protocol Version 4 (TCP/IPv4)**, choose **Use the following IP address**, enter `192.168.12.50` and `255.255.255.0`, and leave **Default gateway** and the DNS servers empty.
 
-Windows chooses an interface for multicast by itself unless the program pins one, so always send from `192.168.12.50` explicitly (the integrations do). Interface names are not accepted on Windows; use the address.
+Windows chooses an interface for multicast by itself unless the program pins one, so always send from `192.168.12.50` explicitly (the Python client does). Give it the address, not an interface name.
 
 ## Firewall
 

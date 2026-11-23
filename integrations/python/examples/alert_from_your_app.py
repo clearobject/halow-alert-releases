@@ -8,7 +8,8 @@ WARNING: every wearable on the HaLowLink network vibrates and sounds. Warn peopl
 WearableAlerter sends each alert through the gateway on a background thread, so a
 simulator or control loop never waits for the network. When the gateway's rate limit
 (one alert per 0.5 s) answers 429, it tries once more; any other failure goes to a
-callback, never into your loop as an exception. Copy the class into your project.
+callback, never into your loop as an exception. Copy the class into your project,
+together with _STOP, print_result and the imports of this file.
 
 The demo watches a made-up distance reading and alerts once each time it drops below 5 m:
 

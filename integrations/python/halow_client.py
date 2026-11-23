@@ -415,7 +415,7 @@ class ResponseListener:
             send_direct("192.168.12.50")
             ack = rl.wait_for("ACK", timeout=15)
 
-    `responses` holds every decoded reply, with "ip" (the wearable) and "received_ms" added.
+    `responses` holds the last 1000 decoded replies, with "ip" (the wearable) and "received_ms" added.
     on_response(reply) is called from a background thread. Only one program on a machine
     can listen on the port: stop the gateway service there first."""
 
