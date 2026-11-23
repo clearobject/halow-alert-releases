@@ -181,7 +181,7 @@ class ModuleTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# Codec, against the vectors shared with the other languages
+# Codec, against the vectors from the gateway's own encoder and decoder
 # --------------------------------------------------------------------------- #
 class CodecTests(unittest.TestCase):
     @classmethod

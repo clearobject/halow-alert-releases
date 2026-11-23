@@ -51,13 +51,6 @@ How to produce it:
 ```python
 struct.pack("<d", time.time())                                                          # Python
 ```
-```javascript
-const b = new ArrayBuffer(8); new DataView(b).setFloat64(0, Date.now() / 1000, true);   // JavaScript
-```
-```csharp
-var b = BitConverter.GetBytes(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0);  // C#
-if (!BitConverter.IsLittleEndian) Array.Reverse(b);
-```
 
 This is the format the ClearObject Workzone system sends. halow-alert always writes it little-endian, whatever the machine's byte order.
 

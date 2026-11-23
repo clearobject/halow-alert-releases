@@ -1,6 +1,6 @@
 name: checks
 
-# Required status checks: lint, csharp, compose, e2e, windows-direct, secrets, python-package-ok.
+# Required status checks: lint, compose, e2e, windows-direct, secrets, python-package-ok.
 # Branch protection refers to these job names; rename them only together with it.
 # python-package-ok sums up python-package and its test matrix, python-package-test, whose
 # job names depend on the matrix. The release workflow runs this whole file again
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4     # for the OpenAPI linter (npx)
         with:
           node-version: "24"
 
@@ -51,37 +51,17 @@ jobs:
           ruff check --no-cache --output-format=github --target-version py38 --line-length 120 \
             --select E,W,F,B,I,UP,C4 --ignore UP031 integrations/python tools .github/scripts
 
-      - name: JavaScript syntax
-        run: |
-          node --check integrations/javascript/halow-client.mjs
-          node --check integrations/javascript/example.mjs
-          node -e "JSON.parse(require('fs').readFileSync('integrations/javascript/package.json', 'utf8'))"
-
-      - name: Codec self-tests against testdata/vectors.json (Python, JavaScript)
+      - name: Codec self-tests against testdata/vectors.json
         run: |
           python integrations/python/halow_client.py selftest
           python integrations/python/example.py --selftest
-          node integrations/javascript/example.mjs --selftest
 
-      - name: Enable loopback multicast
-        # 'lo' has no MULTICAST flag on Linux and 239.0.0.0/8 has no route to it.
-        run: |
-          sudo ip link set lo multicast on
-          sudo ip route replace 239.0.0.0/8 dev lo
-      - name: JavaScript tests (node:test, Node.js 24)
-        # The files are listed: node --test treats a folder differently across versions.
-        env:
-          HALOW_TEST_REQUIRE_MULTICAST: "1"
-        run: >-
-          node --test integrations/javascript/test/codec.test.mjs integrations/javascript/test/gateway.test.mjs integrations/javascript/test/direct.test.mjs integrations/javascript/test/listener.test.mjs integrations/javascript/test/example.test.mjs
-
-      - name: Shell scripts (bash -n, shellcheck)
+      - name: Shell script (bash -n, shellcheck)
         run: |
           bash -n setup-network-linux.sh
-          bash -n integrations/curl/alert.sh
           command -v shellcheck >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck --severity=warning setup-network-linux.sh integrations/curl/alert.sh
+          shellcheck --severity=warning setup-network-linux.sh
 
       - name: OpenAPI description (docs/openapi.yaml)
         run: |
@@ -101,69 +81,16 @@ jobs:
           [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]] \
             || fail "version $ver: use X.Y.Z or X.Y.Z-rc.N / -beta.N / -alpha.N (PEP 440 for the Python package)"
           py="$(python integrations/python/halow_client.py --version)"
-          pkg="$(node -p "require('./integrations/javascript/package.json').version")"
-          mjs="$(node --input-type=module -e "const m = await import('./integrations/javascript/halow-client.mjs'); console.log(m.VERSION)")"
-          cs="$(sed -nE 's/.*public const string Version = "([^"]+)".*/\1/p' integrations/csharp/HalowClient.cs)"
-          proj="$(sed -nE 's#.*<Version>([^<]+)</Version>.*#\1#p' integrations/csharp/HalowExample.csproj)"
-          for pair in "halow_client.py=$py" "package.json=$pkg" "halow-client.mjs=$mjs" "HalowClient.cs=$cs" "HalowExample.csproj=$proj"; do
-            [ "${pair#*=}" = "$ver" ] || fail "${pair%%=*} says ${pair#*=}, the image tag in docker-compose.yml is $ver"
-          done
+          [ "$py" = "$ver" ] || fail "halow_client.py says $py, the image tag in docker-compose.yml is $ver"
           cmp -s integrations/LICENSE integrations/python/LICENSE \
             || fail "integrations/python/LICENSE (packaged with the Python client) must be a copy of integrations/LICENSE"
           grep -qx 'HALOW_TOKEN=' .env.example || fail ".env.example must contain an empty 'HALOW_TOKEN=' line"
           test -f data/.keep || fail "data/.keep is missing"
-          for f in setup-network-linux.sh integrations/curl/alert.sh tools/fake_wearable.py; do
+          for f in setup-network-linux.sh tools/fake_wearable.py; do
             test -x "$f" || fail "$f is not executable (git update-index --chmod=+x $f)"
           done
           python tools/fake_wearable.py --help >/dev/null
           python integrations/python/halow_client.py --help >/dev/null
-
-  csharp:
-    name: csharp
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Build the example (.NET 8, C# 8)
-        run: dotnet build integrations/csharp -c Release
-      - name: Codec self-test against testdata/vectors.json
-        run: dotnet run --project integrations/csharp -c Release --no-build -- --selftest integrations/testdata/vectors.json
-      - name: HalowClient.cs builds for .NET Standard 2.1 with C# 8 (Unity's level)
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/netstandard"
-          cat > "$RUNNER_TEMP/netstandard/HalowClient.NetStandard.csproj" <<EOF
-          <Project Sdk="Microsoft.NET.Sdk">
-            <PropertyGroup>
-              <TargetFramework>netstandard2.1</TargetFramework>
-              <LangVersion>8.0</LangVersion>
-              <Nullable>disable</Nullable>
-              <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-            </PropertyGroup>
-            <ItemGroup>
-              <Compile Include="$GITHUB_WORKSPACE/integrations/csharp/HalowClient.cs" />
-            </ItemGroup>
-          </Project>
-          EOF
-          dotnet build "$RUNNER_TEMP/netstandard/HalowClient.NetStandard.csproj" -c Release
-      - name: Enable loopback multicast
-        run: |
-          sudo ip link set lo multicast on
-          sudo ip route replace 239.0.0.0/8 dev lo
-      - name: C# tests (xUnit; they run the example built above as a child process)
-        env:
-          HALOW_TEST_REQUIRE_MULTICAST: "1"
-          HALOW_TEST_REQUIRE_EXAMPLE: "1"
-        run: |
-          dotnet restore integrations/csharp/tests
-          dotnet build integrations/csharp/tests -c Release --no-restore
-          dotnet test integrations/csharp/tests -c Release --no-build --blame-hang-timeout 2m
 
   compose:
     name: compose
@@ -201,15 +128,13 @@ jobs:
             || fail "HALOW_UID, HALOW_GID or HALOW_IFACE from the environment (.env) are not applied"
 
   e2e:
-    # The published image, the Compose kit and every integration together, on loopback:
-    # the gateway (docker compose) with one stand-in wearable, then each language's
-    # direct mode against a second stand-in wearable on its own group and ports.
+    # The published image, the Compose kit and the Python client together, on loopback:
+    # the gateway (docker compose) with one stand-in wearable, then the client's direct
+    # mode against a second stand-in wearable on its own group and ports.
     name: e2e
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       HALOW_URL: http://127.0.0.1:18080
       HALOW_TOKEN: ci-e2e
@@ -225,14 +150,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"           # the oldest version the JavaScript client supports
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Build the C# example
-        run: dotnet build integrations/csharp -c Release
 
       - name: Enable loopback multicast
         # 'lo' has no MULTICAST flag on Linux and 239.0.0.0/8 has no route to it.
@@ -357,52 +274,15 @@ jobs:
           [ "$rc" = 2 ] || { echo "::error::HALOW_ACK_WAIT=abc gave exit $rc, want 2"; exit 1; }
           sleep 1
 
-      - name: "Gateway mode: JavaScript (Node.js 18)"
-        run: |
-          set -euo pipefail
-          node --version
-          node integrations/javascript/example.mjs
-          "$RUNNER_TEMP/expect-acks.sh" 3
-          rc=0; out="$(HALOW_TOKEN=wrong node integrations/javascript/example.mjs 2>&1)" || rc=$?
-          echo "$out"
-          [ "$rc" = 1 ] && grep -q "HTTP 401" <<<"$out" || { echo "::error::a wrong token did not give exit 1 and HTTP 401"; exit 1; }
-          rc=0; HALOW_ACK_WAIT=abc node integrations/javascript/example.mjs || rc=$?
-          [ "$rc" = 2 ] || { echo "::error::HALOW_ACK_WAIT=abc gave exit $rc, want 2"; exit 1; }
-          sleep 1
-
-      - name: "Gateway mode: curl"
-        run: |
-          set -euo pipefail
-          integrations/curl/alert.sh "curl example" | tee "$RUNNER_TEMP/curl.json"
-          jq -e '.event == "alert_sent" and .egress == "127.0.0.1"' "$RUNNER_TEMP/curl.json"
-          "$RUNNER_TEMP/expect-acks.sh" 4
-          rc=0; out="$(HALOW_TOKEN=wrong integrations/curl/alert.sh 2>&1)" || rc=$?
-          echo "$out"
-          [ "$rc" = 1 ] && grep -q "HTTP 401" <<<"$out" || { echo "::error::a wrong token did not give exit 1 and HTTP 401"; exit 1; }
-          curl -fsS --noproxy '*' "$HALOW_URL/health" | jq -e '.ok == true'
-          sleep 1
-
-      - name: "Gateway mode: C#"
-        run: |
-          set -euo pipefail
-          dotnet run --project integrations/csharp -c Release --no-build
-          "$RUNNER_TEMP/expect-acks.sh" 5
-          rc=0; out="$(HALOW_TOKEN=wrong dotnet run --project integrations/csharp -c Release --no-build 2>&1)" || rc=$?
-          echo "$out"
-          [ "$rc" = 1 ] && grep -q "HTTP 401" <<<"$out" || { echo "::error::a wrong token did not give exit 1 and HTTP 401"; exit 1; }
-          rc=0; HALOW_ACK_WAIT=abc dotnet run --project integrations/csharp -c Release --no-build || rc=$?
-          [ "$rc" = 2 ] || { echo "::error::HALOW_ACK_WAIT=abc gave exit $rc, want 2"; exit 1; }
-          sleep 1
-
       - name: "Gateway mode: Python 3.8"
         run: |
           set -euo pipefail
           docker run --rm --network host -v "$GITHUB_WORKSPACE/integrations:/integrations:ro" \
             -e HALOW_URL -e HALOW_TOKEN -e HALOW_ACK_WAIT -e PYTHONDONTWRITEBYTECODE=1 \
             python:3.8-slim python3 /integrations/python/example.py
-          "$RUNNER_TEMP/expect-acks.sh" 6
+          "$RUNNER_TEMP/expect-acks.sh" 3
 
-      - name: "Direct mode: every language against the second stand-in wearable"
+      - name: "Direct mode: against the second stand-in wearable"
         env:
           HALOW_EGRESS: 127.0.0.1
         run: |
@@ -420,14 +300,6 @@ jobs:
             | tee "$RUNNER_TEMP/direct-cli.log"
           grep -qE "^[1-9][0-9]* ACK\(s\) from 1 wearable\(s\)" "$RUNNER_TEMP/direct-cli.log" || { echo "::error::python CLI: no ACK"; exit 1; }
           echo "::endgroup::"
-          echo "::group::javascript"
-          node integrations/javascript/example.mjs --direct | tee "$RUNNER_TEMP/direct-javascript.log"
-          check javascript "$RUNNER_TEMP/direct-javascript.log"
-          echo "::endgroup::"
-          echo "::group::csharp"
-          dotnet run --project integrations/csharp -c Release --no-build -- --direct | tee "$RUNNER_TEMP/direct-csharp.log"
-          check csharp "$RUNNER_TEMP/direct-csharp.log"
-          echo "::endgroup::"
           echo "::group::python 3.8"
           docker run --rm --network host -v "$GITHUB_WORKSPACE/integrations:/integrations:ro" \
             -e HALOW_EGRESS -e HALOW_GROUP -e HALOW_PORT -e HALOW_RESPONSE_PORT -e HALOW_ACK_WAIT -e PYTHONDONTWRITEBYTECODE=1 \
@@ -439,16 +311,15 @@ jobs:
         run: |
           set -euo pipefail
           fail() { echo "::error::$*"; exit 1; }
-          "$RUNNER_TEMP/expect-acks.sh" 6         # direct-mode ACKs went to the direct listeners, not here
+          "$RUNNER_TEMP/expect-acks.sh" 3         # direct-mode ACKs went to the direct listeners, not here
           jq -e '.devices | length == 1 and .[0].ip == "127.0.0.1" and .[0].device_id == "fake-gateway" and .[0].heartbeats >= 1' \
             "$RUNNER_TEMP/wearables.json" || fail "unexpected GET /wearables"
           log=data/halow-alert.jsonl
           test -s "$log" || fail "the container did not write ./$log"
           [ "$(stat -c %u "$log")" = "$(id -u)" ] || fail "./$log is not owned by HALOW_UID"
-          [ "$(grep -c '"event":"alert_sent"' "$log")" = 6 ] || fail "want 6 alert_sent lines in ./$log"
-          for label in "python example" "javascript example" "curl example" "csharp example"; do
-            grep -q "\"source\":\"http:127.0.0.1:$label\"" "$log" || fail "no alert labelled '$label' in ./$log"
-          done
+          [ "$(grep -c '"event":"alert_sent"' "$log")" = 3 ] || fail "want 3 alert_sent lines in ./$log"
+          [ "$(grep -c '"source":"http:127.0.0.1:python example"' "$log")" = 2 ] \
+            || fail "want 2 alerts labelled 'python example' (Python 3.12 and 3.8) in ./$log"
           grep -q '"event":"wearable_ack"' "$log" || fail "no wearable_ack in ./$log"
           echo "end to end: OK"
 
@@ -462,7 +333,7 @@ jobs:
             || fail "wearable_status.py: the stand-in wearable did not answer"
           # Two alerts back to back: the second meets the 0.5 s rate limit and is retried.
           python3 integrations/python/examples/alert_from_your_app.py --step 0
-          "$RUNNER_TEMP/expect-acks.sh" 8
+          "$RUNNER_TEMP/expect-acks.sh" 5
           [ "$(grep -c '"source":"http:127.0.0.1:vehicle within 5 m"' data/halow-alert.jsonl)" = 2 ] \
             || fail "want 2 alerts labelled 'vehicle within 5 m' in ./data/halow-alert.jsonl"
 
@@ -484,7 +355,7 @@ jobs:
           done
 
   windows-direct:
-    # Direct mode of every language on Windows, against the stand-in wearable on loopback,
+    # The Python client's direct mode on Windows, against the stand-in wearable on loopback,
     # as integrations/README.md "Try it without hardware" describes it. Everything runs in
     # one step, so the stand-in is stopped before the step ends.
     name: windows-direct
@@ -494,8 +365,6 @@ jobs:
       run:
         shell: pwsh
     env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
       HALOW_EGRESS: 127.0.0.1
@@ -508,26 +377,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"           # the oldest version the JavaScript client supports
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Build the C# example
-        run: dotnet build integrations/csharp -c Release
-      - name: JavaScript (node:test, Node.js 18) and C# (xUnit) tests on Windows
-        env:
-          HALOW_TEST_REQUIRE_MULTICAST: "1"
-          HALOW_TEST_REQUIRE_EXAMPLE: "1"
-        run: |
-          # The tests set what they need; the job's HALOW_* settings are for the step below.
-          Get-ChildItem Env:HALOW_* | Where-Object { $_.Name -notlike 'HALOW_TEST_*' } | Remove-Item
-          node --test integrations/javascript/test/codec.test.mjs integrations/javascript/test/gateway.test.mjs integrations/javascript/test/direct.test.mjs integrations/javascript/test/listener.test.mjs integrations/javascript/test/example.test.mjs
-          if ($LASTEXITCODE -ne 0) { throw "JavaScript tests: exit code $LASTEXITCODE" }
-          dotnet test integrations/csharp/tests -c Release --blame-hang-timeout 2m
-          if ($LASTEXITCODE -ne 0) { throw "C# tests: exit code $LASTEXITCODE" }
-      - name: "Direct mode: Python, JavaScript and C# against the stand-in wearable"
+      - name: "Direct mode: Python against the stand-in wearable"
         run: |
           $log = Join-Path $env:RUNNER_TEMP 'fake.log'
           $err = Join-Path $env:RUNNER_TEMP 'fake.err'
@@ -546,9 +396,7 @@ jobs:
             }
             if (-not $ready) { throw 'the stand-in wearable did not start' }
             $runs = @(
-              @{ name = 'python';     exe = 'python'; args = @('integrations/python/example.py', '--direct') },
-              @{ name = 'javascript'; exe = 'node';   args = @('integrations/javascript/example.mjs', '--direct') },
-              @{ name = 'csharp';     exe = 'dotnet'; args = @('run', '--project', 'integrations/csharp', '-c', 'Release', '--no-build', '--', '--direct') }
+              @{ name = 'python'; exe = 'python'; args = @('integrations/python/example.py', '--direct') }
             )
             foreach ($r in $runs) {
               Write-Output "::group::$($r.name)"

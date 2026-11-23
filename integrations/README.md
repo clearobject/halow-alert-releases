@@ -1,18 +1,18 @@
 # Integrations
 
-Small clients for raising ClearZone wearable alerts from your own software, for example a simulator. There is one for Python, JavaScript (Node.js), C# (.NET and Unity) and curl. None of them needs a third-party package, and they are MIT licensed ([LICENSE](LICENSE)), so you can copy them into your own code. The Python client is also a package for pip, `clearobject-halow-client`, which installs the `halow-client` command ([how to install it](python/README.md#install)).
+A Python client for raising ClearZone wearable alerts from your own software, for example a simulator. It needs Python 3.8 or newer and no third-party package, and it is MIT licensed ([LICENSE](LICENSE)), so you can copy it into your own code. It is also a package for pip, `clearobject-halow-client`, which installs the `halow-client` command ([how to install it](python/README.md#install)). From another language, call the gateway's [HTTP API](../docs/HTTP-API.md#calling-the-api) directly.
 
 > **Alerts are real.** Every wearable on the HaLowLink network vibrates and sounds when an alert goes out, including when you run an example. Warn the people nearby first. To develop without hardware, use the stand-in wearable in [`tools/fake_wearable.py`](../tools/fake_wearable.py) (see [Try it without hardware](#try-it-without-hardware)).
 
 ## Pick a mode
 
-Each client can raise an alert in two ways.
+The client can raise an alert in two ways.
 
 | | Gateway mode (HTTP) | Direct mode (UDP) |
 |---|---|---|
 | Where your code runs | Any machine that can reach the gateway over your network | A machine plugged into the HaLowLink (USB-C or its LAN port) with the address `192.168.12.50` |
 | What it does | `POST /alert` to the halow-alert service on the Linux gateway host, with a token | Sends the alert datagram itself: UDP multicast to `239.255.0.10:5000` |
-| Replies from the wearables | `GET /wearables` on the gateway (ACKs, battery, signal) | Listen on TCP `5001` yourself (each client includes a listener) |
+| Replies from the wearables | `GET /wearables` on the gateway (ACKs, battery, signal) | Listen on TCP `5001` yourself (the client includes a listener) |
 | Needs | The gateway running (Docker on Linux), the URL and the token | Nothing else; works on Linux, macOS and Windows |
 | Rate limit, log, heartbeat requests | Done by the gateway (one alert per 0.5 s, JSONL log, a heartbeat request every 15 s) | Up to you |
 
@@ -24,18 +24,18 @@ In direct mode:
 - Only one program on a machine can listen on TCP 5001. Don't run direct mode on the gateway host while the service runs.
 - Allow inbound TCP 5001 from `192.168.12.0/24` in your firewall, or no ACKs arrive.
 - A wearable sends its ACK only after its alarm sequence ends, which can take several seconds.
-- The gateway asks the wearables to report in every 15 s, as ClearObject's production systems do. Whether the wearables need those requests to stay ready is not yet verified on hardware. If your direct-mode program runs for a long time, send a heartbeat request every 15 s (each client has a function for it; nothing buzzes).
+- The gateway asks the wearables to report in every 15 s, as ClearObject's production systems do. Whether the wearables need those requests to stay ready is not yet verified on hardware. If your direct-mode program runs for a long time, send a heartbeat request every 15 s (`send_heartbeat_request`; nothing buzzes).
 
-## Pick a language
+## What is here
 
-| Folder | Runtime | Library | Example |
-|---|---|---|---|
-| [`python/`](python/) | Python 3.8 or newer | `halow_client.py`, also the `halow-client` command; installable with pip as `clearobject-halow-client` | `example.py`, and [`examples/`](python/examples/) (alerts from your own program loop; a wearable status check) |
-| [`javascript/`](javascript/) | Node.js 18 or newer | `halow-client.mjs` (ES module) | `example.mjs` |
-| [`csharp/`](csharp/) | .NET 8 or newer (tested), any .NET Standard 2.1 runtime, or Unity 2021.2 or newer | `HalowClient.cs` (one file) | `Example.cs` in `HalowExample.csproj` (.NET 8 or newer) |
-| [`curl/`](curl/) | bash and curl | `alert.sh` (gateway mode only) | |
+| Path | What it is |
+|---|---|
+| [`python/halow_client.py`](python/halow_client.py) | The library (one module), also the `halow-client` command; installable with pip as `clearobject-halow-client`. [`python/README.md`](python/README.md) lists its functions. |
+| [`python/example.py`](python/example.py) | One alert, then waiting for a wearable's ACK |
+| [`python/examples/`](python/examples/) | Alerts from your own program loop; a wearable status check |
+| [`testdata/vectors.json`](testdata/vectors.json) | The gateway's own encodings, for the client's self-test |
 
-Each folder's README lists its functions. Every example runs the same steps:
+`example.py` runs these steps:
 
 - **Gateway mode** (the default): check `GET /health`, send one alert, then poll `GET /wearables` until the ACK shows up.
 - **Direct mode** (`--direct`): start the TCP 5001 listener, send a heartbeat request (no buzz) and print the heartbeat, then send one alert and wait for its ACK.
@@ -43,7 +43,7 @@ Each folder's README lists its functions. Every example runs the same steps:
 
 ## Settings
 
-The examples and the Python `halow-client` command read these environment variables. The libraries read only `HALOW_URL` and `HALOW_TOKEN` (gateway client) and `HALOW_EGRESS` (direct mode), and only when you pass no value. The alert group and port and the reply port are function arguments whose defaults are the values below, so pass them yourself when you test with the stand-in wearable.
+The examples and the `halow-client` command read these environment variables. The library reads only `HALOW_URL` and `HALOW_TOKEN` (gateway client) and `HALOW_EGRESS` (direct mode), and only when you pass no value. The alert group and port and the reply port are function arguments whose defaults are the values below, so pass them yourself when you test with the stand-in wearable.
 
 | Variable | Used by | Default | Meaning |
 |---|---|---|---|
@@ -52,15 +52,14 @@ The examples and the Python `halow-client` command read these environment variab
 | `HALOW_EGRESS` | direct mode | `192.168.12.50` | This machine's IPv4 address on the HaLowLink. Alerts leave from it (`IP_MULTICAST_IF`). |
 | `HALOW_GROUP`, `HALOW_PORT` | direct mode | `239.255.0.10`, `5000` | The alert group. Change them only for testing with the stand-in wearable. |
 | `HALOW_RESPONSE_PORT` | direct mode | `5001` | TCP port for the wearables' replies. |
-| `HALOW_FORMAT` | direct-mode examples, curl | `raw8` in direct mode; for curl, the gateway's own `HALOW_FORMAT` | `raw8`, `proto` or `both` (see [the protocol](../docs/PROTOCOL.md)). The gateway-mode examples do not send a format, so the gateway's setting applies. |
+| `HALOW_FORMAT` | direct-mode example | `raw8` | `raw8`, `proto` or `both` (see [the protocol](../docs/PROTOCOL.md)). The gateway-mode examples do not send a format, so the gateway's setting applies. |
 | `HALOW_ACK_WAIT` | examples | `15` | Seconds an example waits for the ACK, from 0 to 3600. Any other value is a bad setting (exit code 2), checked before anything is sent. |
-| `HALOW_BURST_SECONDS`, `HALOW_TIMEOUT` | curl | none, `10` | Repeat the alert for this long (0 to 5 s); request timeout in seconds. |
 
-The clients ignore HTTP proxy settings, because the gateway is on your local network.
+The client ignores HTTP proxy settings, because the gateway is on your local network.
 
 ## Errors
 
-In gateway mode, every client turns a failed call into one error with the HTTP status and a hint. The error is `HalowError` in Python and JavaScript and `HalowException` in C#.
+In gateway mode, the client turns a failed call into one error, `HalowError`, with the HTTP status (`e.status`) and a hint.
 
 | Status | Meaning | What to do |
 |---|---|---|
@@ -90,8 +89,6 @@ Direct mode on Linux or macOS, from the repository root:
 python3 tools/fake_wearable.py --iface 127.0.0.1 --group 239.255.77.2 --port 15010 --response-port 15011 --seconds 0 &
 export HALOW_EGRESS=127.0.0.1 HALOW_GROUP=239.255.77.2 HALOW_PORT=15010 HALOW_RESPONSE_PORT=15011
 python3 integrations/python/example.py --direct
-node integrations/javascript/example.mjs --direct
-dotnet run --project integrations/csharp -- --direct
 ```
 
 Direct mode on **Windows** (PowerShell), from the repository root. In one window, start the stand-in wearable (use `python` if `py` is missing; if Windows Firewall asks, allow it):
@@ -105,11 +102,9 @@ In a second window:
 ```powershell
 $env:HALOW_EGRESS = '127.0.0.1'; $env:HALOW_GROUP = '239.255.77.2'; $env:HALOW_PORT = '15010'; $env:HALOW_RESPONSE_PORT = '15011'
 py integrations\python\example.py --direct
-node integrations\javascript\example.mjs --direct
-dotnet run --project integrations\csharp -- --direct
 ```
 
-The CI job `windows-direct` runs these three examples on Windows against the stand-in wearable.
+The CI job `windows-direct` runs this example on Windows against the stand-in wearable.
 
 Gateway mode needs a Linux host with Docker Engine. Run the gateway image on loopback with a second stand-in wearable:
 
@@ -121,9 +116,6 @@ docker run -d --name halow-dev --network host \
   -e HALOW_TOKEN=dev-only ghcr.io/clearobject/halow-alert:1.0.0
 export HALOW_URL=http://127.0.0.1:18080 HALOW_TOKEN=dev-only
 python3 integrations/python/example.py
-node integrations/javascript/example.mjs
-integrations/curl/alert.sh "test alert"
-dotnet run --project integrations/csharp
 docker rm -f halow-dev
 ```
 
@@ -133,12 +125,12 @@ To test gateway-mode code that runs on Windows or macOS, run the block above on 
 
 ## Wire formats
 
-All clients put the same bytes on the wire as the gateway. [`testdata/vectors.json`](testdata/vectors.json) holds inputs and the exact bytes or decoded values that the gateway's own encoder and decoder produce, and each client's `--selftest` checks itself against them. [`docs/PROTOCOL.md`](../docs/PROTOCOL.md) describes the formats byte by byte.
+The client puts the same bytes on the wire as the gateway. [`testdata/vectors.json`](testdata/vectors.json) holds inputs and the exact bytes or decoded values that the gateway's own encoder and decoder produce, and the client's `--selftest` checks itself against them. [`docs/PROTOCOL.md`](../docs/PROTOCOL.md) describes the formats byte by byte.
 
 - **Alert, `raw8`** (the default): 8 bytes, the Unix time in seconds as a little-endian IEEE-754 double.
 - **Alert or heartbeat request, `proto`**: protobuf `GatewayMessage { uint64 timestamp = 1 (ms); CommandCode command = 2 }`, where `1` is ALERT and `2` is HEARTBEAT_REQ.
-- **Wearable reply**: one protobuf `DeviceResponse` per TCP connection to port 5001, either an ACK or a HEARTBEAT (device ID, battery, RSSI, uptime). The clients decode it by hand, so no protobuf library is needed.
+- **Wearable reply**: one protobuf `DeviceResponse` per TCP connection to port 5001, either an ACK or a HEARTBEAT (device ID, battery, RSSI, uptime). The client decodes it by hand, so no protobuf library is needed.
 
 ## Status
 
-Version 1.0.0. The clients are tested in software only: each has its own unit and integration tests (Python `unittest`, JavaScript `node:test`, C# xUnit), which CI runs on Linux and Windows (and the Python tests on macOS too); CI runs every example against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows; and it installs the Python package from its wheel and tests it on Linux, macOS and Windows. They have not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 1.0.0. The client is tested in software only: its unit and integration tests (`unittest`, in [`python/tests/`](python/tests/)) run in CI against the source file and against the package installed from its wheel, on Linux (Python 3.8 and 3.13), macOS and Windows; and CI runs the examples against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows. It has not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
