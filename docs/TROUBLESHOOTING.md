@@ -72,16 +72,16 @@ Every command also takes `--iface`, `--router`, `--group`, `--port`, `--response
 
 `wearables` and `send` listen on TCP 5001 for replies, which the running gateway service already holds. Either stop the service first (`docker stop halow-alert`, then `docker start halow-alert` afterwards; with Compose, `docker compose stop` and `docker compose start`), or use the service's `GET /wearables` instead. While the service runs, `send` still sends but prints `not listening for ACKs: TCP 5001 is taken`, and `wearables` exits with `cannot listen for replies`.
 
-Example output of `send --wait-acks 30` with one wearable:
+Example output of `send --wait-acks 15` with one wearable:
 
 ```text
 [1/1] alert sent: raw8 -> 239.255.0.10:5000 from 192.168.12.50 (1 datagram(s))
-waiting 30 s for wearable ACKs on TCP 5001 ...
+waiting 15 s for wearable ACKs on TCP 5001 ...
   ACK       from 192.168.12.143
 1 ACK(s) from 1 wearable(s)
 ```
 
-A wearable ACKs after its alarm ends or is silenced, so the default 3 s wait can be too short. Use `--wait-acks 30` when testing.
+In the hardware test, the alert reached the wearable within a second. A wearable ACKs only after its alarm ends or is silenced, about 5 s after the alert, so the default 3 s wait is too short. Use `--wait-acks 15` when testing.
 
 ## Network and HaLowLink
 
@@ -119,11 +119,13 @@ A wearable ACKs after its alarm ends or is silenced, so the default 3 s wait can
 
 | Symptom | What to check |
 |---|---|
-| `200` from `POST /alert`, but no buzz and no ACK | Is the wearable on and charged? Is it joined? On the HaLowLink admin page (`https://192.168.12.1`), the **Connected Devices** card on the Home page should list it. Run `wearables` (or watch `GET /wearables`): if heartbeats come back, the network path works. If the wearable still does not alarm, contact ClearObject. |
-| The wearable buzzes, but `GET /wearables` shows no new ACK | Wait longer: the ACK comes after the alarm ends or is silenced. Otherwise the gateway's firewall blocks TCP 5001 from `192.168.12.0/24`, or a VPN captures the replies (`doctor` fails its `egress address` or `route to HaLowLink` row). |
+| `200` from `POST /alert`, but no buzz and no ACK | Is the wearable on and charged? Is it joined? On the HaLowLink admin page (`https://192.168.12.1`), the **Connected Devices** card on the Home page should list it. Run `wearables` (or watch `GET /wearables`): if heartbeats come back, the network path works; then see the next row. If the wearable is off its charging dock and still does not alarm, contact ClearObject. |
+| Alert sent, no alarm and no ACK, but the wearable still answers heartbeat requests | Is the wearable on its charging dock? In testing, a wearable on its charging dock did not respond to alerts, while it kept answering heartbeat requests every 15 s. Take it off the charger and send the alert again. |
+| The wearable buzzes, but `GET /wearables` shows no new ACK | Wait longer: the ACK comes after the alarm ends or is silenced, about 5 s after the alert. Otherwise the gateway's firewall blocks TCP 5001 from `192.168.12.0/24`, or a VPN captures the replies (`doctor` fails its `egress address` or `route to HaLowLink` row). |
 | `GET /wearables` is empty, even after 30 s | No heartbeats are coming back. Same checks as above. Also make sure `HALOW_HEARTBEAT` is not `0`. |
 | Two alarms for one alert, or none for a burst | Duplicate handling for the `raw8` format and for `both` is not yet verified on hardware. Report what you see in an issue. |
-| ACKs arrive, but the latencies look wrong | The wearable's clock may differ from the gateway's. Use the ACK arrival time (`last_ack_ms`), not the wearable's own timestamp, unless the clocks are synchronised. |
+| ACKs arrive about 5 s after the alert | Expected. The alert reaches the wearable within a second, but a wearable acknowledges only after its alarm sequence, which takes about 5 s. |
+| ACKs arrive, but the latencies look wrong | An ACK's own timestamp (`timestamp_ms`, `last_ack_device_ts_ms`) is in whole Unix seconds on the wearable tested on hardware, not milliseconds: multiply it by 1000 before you compare it with `ts_ms`, and expect a resolution of 1 s. The wearable's clock may also differ from the gateway's. Use the ACK arrival time (`last_ack_ms`) unless the clocks are synchronised. |
 
 ## Direct mode
 
@@ -132,7 +134,7 @@ A wearable ACKs after its alarm ends or is silenced, so the default 3 s wait can
 | Sending fails with `Cannot assign requested address` (Linux), `Can't assign requested address` (macOS), or `WinError 10049` / `The requested address is not valid in its context` (Windows) | `192.168.12.50` is not on the machine right now: the HaLowLink is unplugged or booting, or the address is not set ([network setup](NETWORK.md#set-the-address)). |
 | macOS: sending fails with `No route to host` | Allow your terminal app or IDE under **System Settings → Privacy & Security → Local Network**, then restart it. Also check for a VPN. |
 | The send succeeds, but no wearable alarms | The datagram may have left on another interface. Set `IP_MULTICAST_IF` to `192.168.12.50`, as the [Python client](../integrations/README.md) does; Windows in particular picks an interface by itself otherwise. Check that the payload is 8 bytes, little-endian. |
-| No ACKs reach your listener | Start the listener on TCP 5001 before sending. Allow TCP 5001 from `192.168.12.0/24` in the firewall. Wait long enough: ACKs come after the alarm ends. Only one program can listen on 5001. Check for a VPN. |
+| No ACKs reach your listener | Start the listener on TCP 5001 before sending. Allow TCP 5001 from `192.168.12.0/24` in the firewall. Wait long enough: ACKs come after the alarm ends, about 5 s after the alert, so listen for 15 s. Take the wearable off its charging dock. Only one program can listen on 5001. Check for a VPN. |
 | Windows: no ACKs, although the firewall rule exists | Clicking **Cancel** on the Windows Firewall prompt creates a **block** rule for your program, and block rules win. List them with `Get-NetFirewallRule -Direction Inbound -Action Block \| Where-Object DisplayName -like "*python*"` (or your program's name) and remove them, or change them to allow. |
 | It works with the stand-in wearable but not with the real one | The stand-in proves your code and your local setup. For the real wearable, check that it is joined (Connected Devices card), and that your machine reaches the HaLowLink: `ping 192.168.12.1` and the [route checks](NETWORK.md#check-the-setup). |
 

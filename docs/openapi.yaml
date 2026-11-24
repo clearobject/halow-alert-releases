@@ -20,8 +20,10 @@ info:
       may be at most 65536 bytes.
     - Every JSON error body is `{"error": "<reason>"}`.
 
-    Version 1.0.0 is tested in software against a stand-in wearable; it has not yet been
-    verified with HaLow hardware (the changelog lists the open points).
+    Version 1.0.0 is tested in software against a stand-in wearable. On 2026-11-24, alerts
+    sent with halow-alert's `send` command and with the Python client were acknowledged by a
+    ClearZone wearable through a HaLowLink 2; this HTTP API has not yet been tested with HaLow
+    hardware (the changelog lists the open points).
     Full documentation: https://github.com/clearobject/halow-alert-releases/blob/main/docs/HTTP-API.md
   contact:
     name: ClearObject
@@ -56,7 +58,9 @@ paths:
       description: |
         Sends one alert (a UDP multicast to 239.255.0.10:5000). The response comes back as
         soon as the alert is sent, or when its burst ends. It does not wait for the
-        wearables' ACKs; read those from `GET /wearables`.
+        wearables' ACKs; read those from `GET /wearables`. In the hardware test, the wearable
+        received the alert within a second, and its ACK followed about 5 s later, because a
+        wearable acknowledges only after its alarm sequence has run.
 
         The gateway checks, in this order: the path (`404`), the token (`401`),
         `Content-Length` (`400`), the body size (`413`), the body (`400`), the rate limit
@@ -205,15 +209,15 @@ paths:
                         first_seen_ms: 1795111180012
                         acks: 1
                         heartbeats: 2
-                        last_seen_ms: 1795111202917
+                        last_seen_ms: 1795111201874
                         device_id: wz-07
                         battery_percentage: 87
                         rssi: -62
                         uptime_seconds: 3615
                         app_state: 1
                         device_state: 2
-                        last_ack_ms: 1795111202917
-                        last_ack_device_ts_ms: 1795111196851
+                        last_ack_ms: 1795111201874
+                        last_ack_device_ts_ms: 1795111196
                     recent:
                       - event: wearable_heartbeat
                         ts_ms: 1795111180012
@@ -240,9 +244,9 @@ paths:
                           app_state: 1
                           device_state: 2
                       - event: wearable_ack
-                        ts_ms: 1795111202917
+                        ts_ms: 1795111201874
                         ip: 192.168.12.143
-                        timestamp_ms: 1795111196851
+                        timestamp_ms: 1795111196
                         code: ACK
                         ack_success: true
                 empty:
@@ -464,7 +468,10 @@ components:
         last_ack_device_ts_ms:
           type: integer
           format: int64
-          description: When the wearable received the alert it last ACKed, by the wearable's clock. Present after an ACK.
+          description: |
+            When the wearable received the alert it last ACKed, by the wearable's clock, as the
+            wearable sent it. Despite the name, the wearable tested on hardware sent whole Unix
+            seconds: multiply by 1000 to compare it with the other times. Present after an ACK.
         device_id:
           type: string
           description: Present after a heartbeat.
@@ -509,8 +516,11 @@ components:
           type: integer
           format: int64
           description: |
-            ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat
-            request's timestamp, echoed back (ts_ms minus timestamp_ms is the round-trip time), or 0 for a heartbeat sent without a request.
+            ACK: when the wearable received the alert, by its clock, in whole Unix seconds on
+            the wearable tested on hardware (despite the name; multiply by 1000 to compare it
+            with ts_ms).
+            Heartbeat: the heartbeat request's timestamp, echoed back (ts_ms minus timestamp_ms
+            is the round-trip time), or 0 for a heartbeat sent without a request.
         code:
           type: string
           enum: [ACK, HEARTBEAT]

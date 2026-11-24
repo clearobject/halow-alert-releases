@@ -23,7 +23,8 @@ In direct mode:
 - Send at most one alert every 0.5 s, as the gateway does.
 - Only one program on a machine can listen on TCP 5001. Don't run direct mode on the gateway host while the service runs.
 - Allow inbound TCP 5001 from `192.168.12.0/24` in your firewall, or no ACKs arrive.
-- A wearable sends its ACK only after its alarm sequence ends, which can take several seconds.
+- The alert reaches the wearables within a second (in the hardware test), and `send_direct()` returns as soon as it is sent. A wearable sends its ACK only after its alarm sequence ends, about 5 s after the alert (measured on hardware), so listen for ACKs for 15 s or more. An ACK's `timestamp_ms` is the wearable's receive time as the wearable sends it: whole Unix seconds on the wearable tested on hardware, despite the name.
+- Take the wearable off its charging dock before testing: in testing, a wearable on its dock did not respond to alerts, although it kept answering heartbeat requests.
 - The gateway asks the wearables to report in every 15 s, as ClearObject's production systems do. Whether the wearables need those requests to stay ready is not yet verified on hardware. If your direct-mode program runs for a long time, send a heartbeat request every 15 s (`send_heartbeat_request`; nothing buzzes).
 
 ## What is here
@@ -74,7 +75,7 @@ In gateway mode, the client turns a failed call into one error, `HalowError`, wi
 
 ## Try it without hardware
 
-The stand-in wearable answers like a wearable, over loopback, on ports that nothing else uses. It is a development aid. It follows the documented protocol, but it does not prove that the real wearables behave the same way.
+The stand-in wearable answers like a wearable, over loopback, on ports that nothing else uses. It is a development aid. It follows the documented message formats, but it does not prove that the real wearables behave the same way. Two differences from the wearable tested on hardware: it ACKs at once (unless you pass `--ack-delay 5`), where a wearable ACKs about 5 s after the alert, and it puts the receive time in milliseconds in its ACK, where the tested wearable sent whole seconds.
 
 On Linux, allow multicast on loopback first. Do this only on a machine that does not drive a HaLowLink, or remove the route afterwards (`sudo ip route del 239.0.0.0/8 dev lo`). macOS and Windows need no setup.
 
@@ -136,4 +137,4 @@ The client puts the same bytes on the wire as the gateway. [`testdata/vectors.js
 
 ## Status
 
-Version 1.0.0. The client is tested in software only: its unit and integration tests (`unittest`, in [`python/tests/`](python/tests/)) run in CI against the source file on Linux, and against the package installed from its wheel on Linux (Python 3.8 and 3.13), macOS and Windows; and CI runs the examples against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows. It has not yet been tested against a real wearable. For questions, open an issue on this repository or ask your ClearObject contact.
+Version 1.0.0. The client's unit and integration tests (`unittest`, in [`python/tests/`](python/tests/)) run in CI against the source file on Linux, and against the package installed from its wheel on Linux (Python 3.8 and 3.13), macOS and Windows; and CI runs the examples against the published gateway image and the stand-in wearable on loopback, including direct mode on Windows. On 2026-11-24, a `raw8` alert sent with the client's `direct-alert` command (`halow_client.py`) was acknowledged by a ClearZone wearable through a HaLowLink 2. Gateway mode, and the client's reply listener with a real wearable, are not yet tested on hardware ([changelog](../CHANGELOG.md)). For questions, open an issue on this repository or ask your ClearObject contact.

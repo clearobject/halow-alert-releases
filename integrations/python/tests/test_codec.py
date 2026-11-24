@@ -161,6 +161,13 @@ class DeviceResponseTests(unittest.TestCase):
             "device_id": "wz-07", "battery_percentage": 87, "rssi": -62, "uptime_seconds": 3615,
             "app_state": 1, "device_state": 2}})
 
+    def test_ack_with_a_timestamp_in_seconds(self):
+        # The example ACK in docs/PROTOCOL.md. The wearable tested on hardware sent an ACK's timestamp in
+        # whole Unix seconds; the decoder passes the value through unchanged, under the key
+        # timestamp_ms that halow-alert also uses.
+        self.assertEqual(self.decode(bytes.fromhex("0880f2d6ca06 1001 1a020801")),
+                         {"timestamp_ms": 1767225600, "code": "ACK", "ack_success": True})
+
     def test_unknown_codes_keep_their_number(self):
         for code in (3, 7, 127, 128, U32, U64):
             self.assertEqual(self.decode(pb_uint(2, code))["code"], str(code))

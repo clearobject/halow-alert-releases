@@ -48,7 +48,7 @@ The gateway refuses to start on a network address without a token, and refuses t
 
 ## POST /alert
 
-Sends one alert to every wearable on the HaLowLink network. The response comes back as soon as the alert is sent, or when its burst ends. It does not wait for the wearables' ACKs; read those from [`GET /wearables`](#get-wearables).
+Sends one alert to every wearable on the HaLowLink network. The response comes back as soon as the alert is sent, or when its burst ends. It does not wait for the wearables' ACKs; read those from [`GET /wearables`](#get-wearables). In the hardware test, the wearable received the alert within a second, and its ACK followed about 5 s later, because a wearable acknowledges only after its alarm sequence has run.
 
 ### Request
 
@@ -100,7 +100,7 @@ A field that is missing or `null` gets the default. Other fields are ignored.
 
 With `{"format": "both", "burst_seconds": 1}` the response arrives after about 1 s and reports `"format": "both"` and `"datagrams": 20` (10 copies of each format).
 
-A `200` means the alert left the gateway. It does not prove that a wearable alarmed: a wearable that is off or out of range simply does not ACK.
+A `200` means the alert left the gateway. It does not prove that a wearable alarmed: a wearable that is off, out of range or on its charging dock does not ACK.
 
 **`400` Bad Request**: the request is malformed. Nothing was sent, and the rate limit was not used up. The `error` is one of:
 
@@ -176,15 +176,15 @@ The gateway asks every wearable for a heartbeat when it starts and then every 15
    "first_seen_ms": 1795111180012,
    "acks": 1,
    "heartbeats": 2,
-   "last_seen_ms": 1795111202917,
+   "last_seen_ms": 1795111201874,
    "device_id": "wz-07",
    "battery_percentage": 87,
    "rssi": -62,
    "uptime_seconds": 3615,
    "app_state": 1,
    "device_state": 2,
-   "last_ack_ms": 1795111202917,
-   "last_ack_device_ts_ms": 1795111196851
+   "last_ack_ms": 1795111201874,
+   "last_ack_device_ts_ms": 1795111196
   }
  ],
  "recent": [
@@ -220,9 +220,9 @@ The gateway asks every wearable for a heartbeat when it starts and then every 15
   },
   {
    "event": "wearable_ack",
-   "ts_ms": 1795111202917,
+   "ts_ms": 1795111201874,
    "ip": "192.168.12.143",
-   "timestamp_ms": 1795111196851,
+   "timestamp_ms": 1795111196,
    "code": "ACK",
    "ack_success": true
   }
@@ -240,7 +240,7 @@ Before any wearable has answered: `{"devices": [], "recent": []}`.
 | `first_seen_ms`, `last_seen_ms` | always | When the gateway first and last heard from it. |
 | `acks`, `heartbeats` | always | How many ACKs and heartbeats it has sent since the gateway started. |
 | `last_ack_ms` | after an ACK | When the last ACK arrived. |
-| `last_ack_device_ts_ms` | after an ACK | When the wearable received the alert it ACKed, **by the wearable's clock**. |
+| `last_ack_device_ts_ms` | after an ACK | When the wearable received the alert it ACKed, **by the wearable's clock**, as the wearable sent it. Despite the `_ms` in the name, the wearable tested on hardware sent whole Unix seconds: multiply by 1000 to compare it with the other times. |
 | `device_id` | after a heartbeat | The wearable's ID (at most 16 bytes). |
 | `battery_percentage` | after a heartbeat | Battery charge, in percent. |
 | `rssi` | after a heartbeat | Received signal strength, in dBm (negative; closer to 0 is stronger). |
@@ -254,12 +254,12 @@ Before any wearable has answered: `{"devices": [], "recent": []}`.
 | `event` | `wearable_ack` or `wearable_heartbeat` |
 | `ts_ms` | When the reply arrived at the gateway |
 | `ip` | The wearable's address |
-| `timestamp_ms` | ACK: when the wearable received the alert, by its clock. Heartbeat: the heartbeat request's timestamp, echoed back, so `ts_ms - timestamp_ms` is the round-trip time; `0` for a heartbeat the wearable sent on its own, without a request. |
+| `timestamp_ms` | ACK: when the wearable received the alert, by its clock, in whole Unix seconds on the wearable tested on hardware (despite the name; multiply by 1000 to compare it with `ts_ms`). Heartbeat: the heartbeat request's timestamp, echoed back, so `ts_ms - timestamp_ms` is the round-trip time; `0` for a heartbeat the wearable sent on its own, without a request. |
 | `code` | `ACK` or `HEARTBEAT` |
 | `ack_success` | ACK only: `true` when the wearable reports success |
 | `heartbeat` | Heartbeat only: `device_id`, `battery_percentage`, `rssi`, `uptime_seconds`, `app_state`, `device_state` |
 
-**Did my alert arrive?** Note `ts_ms` from the `POST /alert` response, then poll `GET /wearables` for a few seconds. A wearable acknowledged the alert when its `last_ack_ms` is later than that `ts_ms`. Allow several seconds: a wearable sends its ACK after its alarm sequence ends or is silenced. ACKs carry no alert ID, so if you send alerts in quick succession, match each ACK to the most recent alert sent before it.
+**Did my alert arrive?** Note `ts_ms` from the `POST /alert` response, then poll `GET /wearables`. A wearable acknowledged the alert when its `last_ack_ms` is later than that `ts_ms`. Allow 15 s: a wearable sends its ACK after its alarm sequence ends or is silenced, about 5 s after the alert. Your software does not have to wait for this before it goes on; the alert has already been sent when `POST /alert` answers. ACKs carry no alert ID, so if you send alerts in quick succession, match each ACK to the most recent alert sent before it.
 
 ## GET /health
 

@@ -15,7 +15,9 @@ import shutil
 import socket
 import tempfile
 import threading
+import time
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 from halow_test_support import (
@@ -226,16 +228,42 @@ class DirectCommandTests(CleanEnv, unittest.TestCase):
         lines = out.splitlines()
         self.assertEqual(lines[0], f"alert sent: raw8 -> {GROUP}:{PORT} from {LOOPBACK} (3 datagram(s))")
         # Replies print as they arrive, from another thread: possibly before the next line.
-        self.assertIn(f"listening 0.5 s for replies on TCP {rport} ...", lines)
-        self.assertIn(f"  ACK from {LOOPBACK}: wearable timestamp 11 ms", lines)
-        self.assertIn(f"  ACK from {LOOPBACK}: wearable timestamp 13 ms", lines)
+        self.assertIn(f"listening 0.5 s for ACKs on TCP {rport} (a wearable ACKs when its alarm ends, "
+                      f"about 5 s after the alert) ...", lines)
+        self.assertIn(f"  ACK from {LOOPBACK}: wearable timestamp 11", lines)
+        self.assertIn(f"  ACK from {LOOPBACK}: wearable timestamp 13", lines)
         self.assertIn(f"  HEARTBEAT from {LOOPBACK}: device_id=wz?[2Jé battery=55% rssi=-62 dBm uptime=3615 s",
                       lines)
         self.assertEqual(lines[-1], "2 ACK(s) from 1 wearable(s)")
 
         code, out, err = call_main(["direct-heartbeat"] + self.where(rport) + ["--seconds", "0.5"])
         self.assertEqual(code, 0, err)
+        self.assertIn(f"listening 0.5 s for replies on TCP {rport} ...", out.splitlines())
         self.assertEqual(out.splitlines()[-1], "1 HEARTBEAT(s) from 1 wearable(s)")
+
+    def test_default_listening_times(self):
+        # direct-alert listens 15 s: a wearable ACKs only when its alarm ends, about 5 s after
+        # the alert. direct-heartbeat listens 5 s: heartbeat replies take well under a second.
+        # The alert is sent before the wait starts. sleep() is recorded, not slept.
+        sent, slept = _Sent(self), []
+
+        def sleep(s):
+            slept.append((s, len(sent.calls)))
+
+        clock = SimpleNamespace(time=time.time, monotonic=time.monotonic, sleep=sleep)
+        with mock.patch.object(hc, "time", clock):
+            code, out, err = call_main(["direct-alert"] + self.where())
+            self.assertEqual(code, 0, err)
+            self.assertEqual(slept, [(15.0, 1)], "listened 15 s, after the alert was sent")
+            lines = out.splitlines()
+            self.assertEqual(lines[0], f"alert sent: raw8 -> {GROUP}:{PORT} from {LOOPBACK} (3 datagram(s))")
+            self.assertIn("listening 15 s for ACKs", lines[1])
+            self.assertEqual(lines[-1], "0 ACK(s) from 0 wearable(s)")
+            slept.clear()
+            code, out, err = call_main(["direct-heartbeat"] + self.where())
+            self.assertEqual(code, 0, err)
+            self.assertEqual(slept, [(5.0, 2)])
+            self.assertEqual(out.splitlines()[-1], "0 HEARTBEAT(s) from 0 wearable(s)")
 
     def test_replies_from_another_subnet_are_ignored(self):
         rport = free_port()

@@ -137,7 +137,7 @@ class ExamplePyTests(_StubCase):
         self.assertEqual(code, 0, out.getvalue())
         self.assertEqual(sends, ["heartbeat", "raw8"])
         self.assertRegex(out.getvalue(), r"HEARTBEAT from 127\.0\.0\.1: no heartbeat payload, round trip -?\d+ ms\n")
-        self.assertIn("ACK from 127.0.0.1: wearable timestamp 5 ms", out.getvalue())
+        self.assertIn("ACK from 127.0.0.1: wearable timestamp 5\n", out.getvalue())
 
     def test_direct_mode_bad_settings_exit_2_before_anything_is_sent(self):
         mod = _load(EXAMPLE_PY, "example_py")

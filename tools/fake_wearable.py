@@ -4,8 +4,8 @@
 """fake_wearable.py - a stand-in ClearZone wearable, for developing without hardware.
 
 Python 3.8+, standard library only. A development aid: it follows the documented
-protocol (docs/PROTOCOL.md), and does NOT prove that the real wearable firmware behaves
-the same way.
+message formats (docs/PROTOCOL.md), and does NOT prove that the real wearable firmware
+behaves the same way.
 
 It joins the alert group on one local interface and, for each datagram:
   ALERT (raw8 or proto)  opens TCP to the sender's address on the response port and
@@ -199,7 +199,7 @@ def _ipv4(v):
 def main(argv=None):
     p = argparse.ArgumentParser(
         description="Stand-in ClearZone wearable for development without hardware. It follows the "
-                    "documented protocol; it does not prove the real wearable firmware.")
+                    "documented message formats; it does not prove the real wearable firmware.")
     p.add_argument("iface_pos", nargs="?", metavar="IFACE", type=_ipv4,
                    help="same as --iface")
     p.add_argument("--iface", type=_ipv4, default=None,

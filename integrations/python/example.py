@@ -91,7 +91,7 @@ def direct(wait_s: float) -> int:
         print("alert sent:", json.dumps(record))
         ack = replies.wait_for("ACK", timeout=wait_s, after_ms=record["ts_ms"])
         if ack:
-            print(f"ACK from {ack['ip']}: wearable timestamp {ack['timestamp_ms']} ms")
+            print(f"ACK from {ack['ip']}: wearable timestamp {ack['timestamp_ms']}")
             return 0
     print(f"no ACK within {wait_s:g} s", file=sys.stderr)
     return 3
