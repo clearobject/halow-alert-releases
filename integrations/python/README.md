@@ -73,7 +73,7 @@ print(gw.wearables()["devices"])                # ACKs, battery, RSSI per wearab
 | `GatewayClient(url=None, token=None, timeout=10.0)` | A client. `url` defaults to `HALOW_URL`, then `http://127.0.0.1:8080`; `token` defaults to `HALOW_TOKEN`. |
 | `.health()` | The `GET /health` body for `200` and `503`. Check `["ok"]`. |
 | `.wearables()` | The `GET /wearables` body: `{"devices": [...], "recent": [...]}`. |
-| `.alert(label=None, fmt=None, burst_seconds=None)` | The gateway's send record. Raises `HalowError` with `.status` (`401`, `429`, `500`, ...) and `.body`, or with `.status` `None` when the gateway was not reached. |
+| `.alert(label=None, fmt=None, burst_seconds=None)` | The gateway's send record, as soon as the alert is sent (with a burst, when the burst ends); it does not wait for ACKs. Raises `HalowError` with `.status` (`401`, `429`, `500`, ...) and `.body`, or with `.status` `None` when the gateway was not reached. |
 | `total_acks(wearables)` | The number of ACKs in a `wearables()` body. |
 
 ## Direct mode
@@ -88,6 +88,8 @@ with ResponseListener(5001, allow_prefix=subnet_prefix(egress)) as replies:
     ack = replies.wait_for("ACK", timeout=15, after_ms=record["ts_ms"])
     print(ack)                                  # {"code": "ACK", "ip": "192.168.12.x", "timestamp_ms": ..., ...} or None
 ```
+
+`send_direct()` returns as soon as the alert is sent, and in the hardware test the wearable received it within a second. The ACK comes about 5 s later, because a wearable acknowledges only after its alarm sequence has run; that is why the example waits up to 15 s. An ACK's `timestamp_ms` is the wearable's receive time as the wearable sends it: whole Unix seconds on the wearable tested on hardware, despite the name. A heartbeat's `timestamp_ms` is the request's timestamp in ms, echoed. Take the wearable off its charging dock before testing: in testing, a docked wearable did not respond to alerts.
 
 A program that runs for a long time can keep the listener open, handle each reply as it arrives, and ask the wearables to report in every 15 s, as the gateway does:
 
@@ -115,7 +117,7 @@ finally:
 
 | Call | Does |
 |---|---|
-| `send_direct(egress="", fmt="raw8", group="239.255.0.10", port=5000, ttl=4, burst_seconds=0.0, burst_interval_ms=100)` | Sends one alert (`raw8`, `proto` or `both`) and returns a record like the gateway's. `burst_seconds` resends the same bytes for that long (at most 5 s). Raises `OSError` when `egress` is not an address of this machine. |
+| `send_direct(egress="", fmt="raw8", group="239.255.0.10", port=5000, ttl=4, burst_seconds=0.0, burst_interval_ms=100)` | Sends one alert (`raw8`, `proto` or `both`) and returns a record like the gateway's, without waiting for ACKs. `burst_seconds` resends the same bytes for that long (at most 5 s). Raises `OSError` when `egress` is not an address of this machine. |
 | `send_heartbeat_request(egress="", group="239.255.0.10", port=5000, ttl=4)` | Asks every wearable to report in. Nothing buzzes. Returns the request's timestamp (ms), which each heartbeat echoes. |
 | `ResponseListener(port=5001, bind="0.0.0.0", allow_prefix="", on_response=None)` | Listens for replies in a background thread. Use `.start()` and `.stop()`, or `with`. `.responses` holds the last 1000 replies, and `.wait_for(code, timeout, after_ms)` waits for one. `on_response(reply)` runs on a background thread, one per reply, so two calls can overlap. |
 | `encode_raw8(t)`, `encode_gateway_message(timestamp_ms, command)`, `decode_device_response(buf)` | The wire formats. |
@@ -132,11 +134,11 @@ halow-client health
 halow-client wearables
 halow-client alert --label "zone-3"            # --format proto, --burst-seconds 1
 halow-client direct-heartbeat --egress 192.168.12.50 --seconds 5
-halow-client direct-alert --egress 192.168.12.50 --wait-acks 15
+halow-client direct-alert --egress 192.168.12.50    # sends the alert, then listens 15 s for ACKs
 halow-client selftest integrations/testdata/vectors.json
 ```
 
-`halow-client <command> --help` lists every option. The exit code is `0` on success, `1` when the gateway call failed, and `2` for bad settings. `direct-alert` and `direct-heartbeat` exit `0` once the request is sent, whether or not replies arrive: check the printed count (`N ACK(s) from M wearable(s)`). Unlike the examples, they never exit `3`. `--wait-acks` and `--seconds` default to 5 s; a wearable ACKs only after its alarm ends, so use `--wait-acks 15` as above.
+`halow-client <command> --help` lists every option. The exit code is `0` on success, `1` when the gateway call failed, and `2` for bad settings. `direct-alert` and `direct-heartbeat` exit `0` once the request is sent, whether or not replies arrive: check the printed count (`N ACK(s) from M wearable(s)`). Unlike the examples, they never exit `3`. `direct-alert` sends the alert first, then listens for ACKs: `--wait-acks` defaults to 15 s, because a wearable ACKs only when its alarm ends, about 5 s after the alert. `direct-heartbeat --seconds` defaults to 5 s; heartbeat replies take well under a second.
 
 `selftest` checks the codec against `integrations/testdata/vectors.json` and sends nothing. The package does not include that file, so pass its path from a clone of this repository or the unpacked kit. In a clone or the unpacked kit, `python3 integrations/python/halow_client.py selftest` finds it by itself. A copy of `halow_client.py` elsewhere, like the installed package, needs the path: `python3 halow_client.py selftest path/to/integrations/testdata/vectors.json`.
 
@@ -192,7 +194,7 @@ Two more programs in [`examples/`](https://github.com/clearobject/halow-alert-re
   HALOW_URL=http://192.0.2.10:8080 python3 examples/wearable_status.py --expect 2 --wait 30
   ```
 
-  Exit code `0` when the gateway can send and at least `--expect` wearables (default 1) answered within `--wait` seconds (default 20), `3` when fewer answered, `1` when the gateway cannot send or was not reached, `2` for bad settings.
+  Exit code `0` when the gateway can send and at least `--expect` wearables (default 1) answered within `--wait` seconds (default 20), `3` when fewer answered, `1` when the gateway cannot send or was not reached, `2` for bad settings. A wearable on its charging dock still answers here, but in testing it did not respond to alerts: take it off the dock before the session.
 
 ## Tests
 

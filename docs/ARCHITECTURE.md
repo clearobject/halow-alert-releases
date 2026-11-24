@@ -144,12 +144,12 @@ sequenceDiagram
     H->>W: forwarded over the HaLow radio
     Note over W: ignores the alert if it already acted on this timestamp (documented for proto, not yet known for raw8)
     W->>W: alarm (vibration and sound)
-    Note over W: ACK after the alarm ends or is silenced (documented, not yet measured)
+    Note over W: ACK after the alarm ends or is silenced, about 5 s after the alert (measured)
     W->>G: TCP connect to port 5001, one DeviceResponse ACK, close
     Note over G: roster acks plus 1, last_ack_ms, log line wearable_ack
 ```
 
-The ACK's `timestamp` is the moment the wearable **received** the alert, by the wearable's clock. Its arrival time at the gateway also includes the alarm sequence, so it can be several seconds after the alert.
+The ACK's `timestamp` is the moment the wearable **received** the alert, by the wearable's clock, in whole Unix seconds on the wearable tested on hardware. The alert itself arrives within a second: in the hardware test, the wearable received it in the same second it was sent. The ACK's arrival at the gateway also includes the alarm sequence, so it comes about 5 s after the alert (5.04 to 5.14 s in the test). The gateway's `200` does not wait for it.
 
 ### Heartbeat request and heartbeat
 
@@ -174,14 +174,15 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 | Property | Behaviour | Status |
 |---|---|---|
 | Transport | UDP multicast: no connection, no delivery confirmation from the network. | By design |
-| Fan-out | Every wearable on the HaLow network alerts. The protocol has no way to address a single wearable. | Verified on hardware |
+| Fan-out | Every wearable on the HaLow network alerts, except that in the hardware test wearables on their charging dock did not respond (see [Failure modes](#failure-modes)). The protocol has no way to address a single wearable. | Verified on hardware |
+| Speed | The alert reaches the wearables within a second: in the hardware test, the wearable received each alert in the same second it was sent, and a heartbeat request and its reply took 30 to 80 ms. Only the ACK takes about 5 s (see below). | Verified on hardware |
 | What `200` means | The datagram left the gateway towards the HaLowLink. It does not mean that a wearable alarmed. | Verified in software |
 | Retransmission | None by default. With `burst_seconds` (at most 5), the gateway re-sends the **identical** datagram every 100 ms until that many seconds have passed: about 10 copies per second. It rides out radio loss. | Verified in software |
 | Duplicates | A wearable ignores an alert whose timestamp it has already acted on, so the copies of a burst should alarm once. Documented for the `proto` format. For `raw8` (the default) and for `both`, not yet known. | Documented / Unknown |
 | Clock | The alert carries the gateway's clock. Keep it moving forward: an alert stamped earlier than the last one a wearable acted on may be ignored, for example after the clock is set back. | Inferred |
-| Evidence of delivery | The wearable's ACK over TCP 5001. It arrives after the alarm ends or is silenced, so allow several seconds. Use `last_ack_ms` and `acks` in `GET /wearables`. | Documented, not yet measured |
+| Evidence of delivery | The wearable's ACK over TCP 5001. It arrives after the alarm ends or is silenced, about 5 s after the alert ([measurements](PROTOCOL.md#timing-of-acks)), so allow 15 s. Use `last_ack_ms` and `acks` in `GET /wearables`. | Verified on hardware (the ACK and its timing) |
 | Matching ACKs to alerts | ACKs carry no alert ID and no device ID. Identify the wearable by its IP address (heartbeats map the address to a `device_id`), and match by time: the ACKs that arrive after alert N and before alert N+1 belong to alert N. | Verified against the schema |
-| ACK destination | The wearable connects back to the address the alert came from. Use `192.168.12.50`, the address ClearObject's own systems send from. Whether the wearables reply to a fixed address instead is not yet verified. | Inferred |
+| ACK destination | The wearable connects back to the address the alert came from. Use `192.168.12.50`, the address ClearObject's own systems send from. Whether the wearables reply to a fixed address instead is not yet verified: in the hardware test, the alerts were sent from `192.168.12.50` and the ACKs came back there, which fits either. | Inferred |
 | Rate limit | One accepted alert per 0.5 s; sooner requests get `429` and are not sent. Failed requests and the copies inside a burst do not count. The ClearObject Workzone system uses the same limit. In direct mode, keep to it yourself. | Verified in software |
 | Liveness | Heartbeat requests every 15 s keep `last_seen_ms` current. Treat a wearable as offline after 60 s without a reply, as the ClearObject Workzone system does. | Verified in software |
 | State | The roster is in memory and is lost on restart. The JSONL log is the durable record. | Verified in software |
@@ -195,6 +196,7 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 | **Gateway host reboots** | Docker restarts the container (`restart: unless-stopped`); NetworkManager restores the address. | The service is back without manual steps. | By design, not yet on hardware |
 | **No internet, WAN offline** | Nothing changes. Every part runs on the local link. | Nothing. | By design |
 | **Wearable off, out of range, not joined, or battery flat** | The alert is still sent. | `POST /alert` returns `200`, but no ACK arrives, and the wearable's `last_seen_ms` stops advancing. | Verified in software |
+| **Wearable on its charging dock** | The alert is still sent. | No ACK: in the hardware test, wearables on their charging dock did not respond to alerts, although they kept answering heartbeat requests, so `last_seen_ms` keeps advancing while `acks` does not. Take the wearable off the charger. | Verified on hardware (the wearables' behaviour; the gateway was not part of the test) |
 | **Radio loss of one datagram** | Nothing, unless you asked for a burst. | No alarm and no ACK. Send again, or use `burst_seconds` (for example `1`). | By design |
 | **Alerts faster than 0.5 s** | The later one is refused. | `429`; retry after 0.5 s if the first alert does not cover it. | Verified in software |
 | **TCP 5001 already taken at startup** (another listener on the host) | The service exits with code 2: `Address already in use`. Docker restarts it until the port is free. | The container keeps restarting. | Verified in software |
@@ -232,7 +234,7 @@ See [SECURITY.md](../SECURITY.md) for how to report a vulnerability.
 | `event` | When | Fields |
 |---|---|---|
 | `alert_sent` | An alert was sent (API or CLI) | `ts_ms` (send time, ms since the Unix epoch), `source` (`http:<caller-ip>:<label>` for the API, `cli` for the `send` command), `format` (`raw8`, `proto` or `both`), `group` (`239.255.0.10:5000`), `egress` (the sending address), `datagrams` (number sent, including burst copies) |
-| `wearable_ack` | A wearable ACKed | `ts_ms` (arrival time at the gateway), `ip` (the wearable), `timestamp_ms` (when the wearable received the alert, by its clock), `code` (`ACK`), `ack_success` |
+| `wearable_ack` | A wearable ACKed | `ts_ms` (arrival time at the gateway), `ip` (the wearable), `timestamp_ms` (when the wearable received the alert, by its clock, as the wearable sent it: whole Unix seconds on the wearable tested on hardware, despite the name), `code` (`ACK`), `ack_success` |
 | `wearable_heartbeat` | A wearable answered a heartbeat request | `ts_ms`, `ip`, `timestamp_ms` (the request's timestamp, echoed), `code` (`HEARTBEAT`), `heartbeat` (`device_id`, `battery_percentage`, `rssi`, `uptime_seconds`, `app_state`, `device_state`) |
 | `wearable_rejected` | A host outside `192.168.12.0/24` connected to TCP 5001 | `ts_ms`, `ip` (at most once a minute per address) |
 
@@ -241,10 +243,10 @@ Example lines:
 ```json
 {"event":"wearable_heartbeat","ts_ms":1795111195031,"ip":"192.168.12.143","timestamp_ms":1795111194990,"code":"HEARTBEAT","heartbeat":{"device_id":"wz-07","battery_percentage":87,"rssi":-62,"uptime_seconds":3615,"app_state":1,"device_state":2}}
 {"event":"alert_sent","ts_ms":1795111196804,"source":"http:192.0.2.10:zone-3 intrusion","format":"raw8","group":"239.255.0.10:5000","egress":"192.168.12.50","datagrams":1}
-{"event":"wearable_ack","ts_ms":1795111202917,"ip":"192.168.12.143","timestamp_ms":1795111196851,"code":"ACK","ack_success":true}
+{"event":"wearable_ack","ts_ms":1795111201874,"ip":"192.168.12.143","timestamp_ms":1795111196,"code":"ACK","ack_success":true}
 ```
 
-From these you can measure the **ACK delay** (`ts_ms` of `wearable_ack` minus `ts_ms` of `alert_sent`: the alarm sequence plus the network) and, if the wearable's clock agrees with the gateway's, the **delivery latency** (`timestamp_ms` of `wearable_ack` minus `ts_ms` of `alert_sent`: the radio path).
+From these you can measure the **ACK delay** (`ts_ms` of `wearable_ack` minus `ts_ms` of `alert_sent`: the alarm sequence plus the network, about 5 s) and, if the wearable's clock agrees with the gateway's, the **delivery latency**, to the second only (`timestamp_ms` of `wearable_ack`, in whole seconds as the wearable tested on hardware sent it, minus `ts_ms` of `alert_sent` divided by 1000 and rounded down: the radio path; `0` means the wearable received the alert in the second it was sent). In the example, both are 1795111196, and the ACK arrived 5.07 s after the alert.
 
 **The container output** (`docker logs halow-alert`, or `docker compose logs` with the Compose kit):
 
@@ -259,9 +261,9 @@ The status words used in this guide:
 
 | Status | Meaning |
 |---|---|
-| **Verified on hardware** | Seen working with real wearables, in production use with the ClearObject Workzone system. |
+| **Verified on hardware** | Seen with real wearables: in production use with the ClearObject Workzone system, or in the hardware test of halow-alert 1.0.0 on 2026-11-24 (the [changelog](../CHANGELOG.md) lists what it covered). |
 | **Verified against the schema** | Checked against ClearObject's protocol definitions and their byte-level tests. |
-| **Verified in software** | halow-alert 1.0.0 behaviour, tested over loopback against the stand-in wearable. Not yet on HaLow hardware. |
+| **Verified in software** | halow-alert 1.0.0 behaviour, tested over loopback against the stand-in wearable. This behaviour has not yet been tested on HaLow hardware. |
 | **Documented** | Stated by ClearObject's operator app and protocol definitions; not yet measured with halow-alert. |
 | **Inferred** | Follows from code and simulators; not proven on hardware. |
 | **Unknown** | Open; to be measured during hardware verification. |

@@ -7,7 +7,7 @@
 ClearZone wearables (vests and handhelds) vibrate and sound when they receive an alert over a Wi-Fi HaLow (IEEE 802.11ah) network served by a Morse Micro HaLowLink 2. **halow-alert** is a small gateway service that lets any program, such as a simulator, a control application or a test script, trigger them with a single HTTP request, and that reports which wearables acknowledged. Everything runs on your local network: no cloud, no internet connection and no ClearObject Workzone camera system are needed. This repository holds the user documentation, a ready-made Python client, the Docker Compose kit and the releases. The service itself ships as the container image `ghcr.io/clearobject/halow-alert`.
 
 > [!NOTE]
-> **Version 1.0.0** has been tested in software on Linux, macOS and Windows, against a stand-in wearable that follows the documented protocol. It has not yet been verified with HaLow hardware: the [changelog](CHANGELOG.md) lists the points still to check. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
+> **Version 1.0.0** has been tested in software on Linux, macOS and Windows, against a stand-in wearable that follows the documented message formats, and on 2026-11-24 with a HaLowLink 2 and a ClearZone wearable: `raw8` and `proto` alerts sent with halow-alert's `send` command, and a `raw8` alert sent with the Python client, were acknowledged by the wearable. The [changelog](CHANGELOG.md) lists what that test covered and what is still to check, including the gateway service and its HTTP API on hardware. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
 
 ## How it works
 
@@ -31,7 +31,9 @@ flowchart LR
 
 1. Your software calls `POST /alert` on the **alert gateway**, a Linux machine that is cabled to the HaLowLink.
 2. The gateway sends one UDP multicast datagram to `239.255.0.10:5000`. The HaLowLink carries it over the HaLow radio, and **every wearable on that network alerts**.
-3. Each wearable reports back over TCP port `5001` with an acknowledgement (ACK). Every 15 s the gateway also asks the wearables for a heartbeat (battery, signal strength), so `GET /wearables` shows when each wearable last answered.
+3. Each wearable reports back over TCP port `5001` with an acknowledgement (ACK) once its alarm has run. Every 15 s the gateway also asks the wearables for a heartbeat (battery, signal strength), so `GET /wearables` shows when each wearable last answered.
+
+**The alert arrives within a second; only the ACK takes about 5 s.** In the hardware test, the wearable received each alert in the same second it was sent (by its own clock, which it reports to the second), and a heartbeat request and its reply took 30 to 80 ms. A wearable sends its ACK only after its alarm sequence finishes, so the ACK arrives about 5 s after the alert. Your software never has to wait for it: `POST /alert`, and `GatewayClient.alert()` in the Python client, return as soon as the alert is sent (with a burst, when the burst ends). The ACKs show up in `GET /wearables` afterwards.
 
 In **direct mode** there is no gateway: the program that runs on the machine plugged into the HaLowLink sends the multicast datagram itself. It takes a few lines of code in any language.
 
@@ -52,6 +54,9 @@ Docker Desktop (on macOS, Windows or Linux) and rootless Docker run containers i
 
 > [!WARNING]
 > The wearables vibrate and sound at full volume. Tell the people nearby before you send an alert.
+
+> [!IMPORTANT]
+> Take the wearable off its charging dock before you test. In testing, a wearable on its charging dock did not respond to alerts, although it kept answering heartbeat requests.
 
 ## Quick start A: alert gateway
 
@@ -132,7 +137,7 @@ The commands above are for bash. In Windows PowerShell, also set `$env:HALOW_URL
    s.sendto(struct.pack("<d", time.time()), ("239.255.0.10", 5000))   # 8 bytes: little-endian double, Unix seconds
    ```
 
-3. Optionally, to learn which wearables acknowledged, accept TCP connections on port 5001 and decode the reply. Allow TCP 5001 from `192.168.12.0/24` in your firewall.
+3. Optionally, to learn which wearables acknowledged, accept TCP connections on port 5001 and decode the reply. Each ACK comes about 5 s after the alert, once the wearable's alarm has run, so listen for 15 s or more. Allow TCP 5001 from `192.168.12.0/24` in your firewall.
 
 The [Python client](integrations/README.md) has complete, tested examples for both modes, and the [wire protocol](docs/PROTOCOL.md) documents every byte.
 
@@ -175,11 +180,11 @@ Complete programs to start from:
 |---|---|
 | [`example.py`](integrations/python/example.py) | One alert, then waiting for a wearable's ACK, through the gateway or directly (`--direct`) |
 | [`examples/alert_from_your_app.py`](integrations/python/examples/alert_from_your_app.py) | Alerts from inside your own program loop, such as a simulator: sent on a background thread so the loop never waits, once per event, with a retry when the gateway answers `429` |
-| [`examples/wearable_status.py`](integrations/python/examples/wearable_status.py) | A check before a session: can the gateway send, and which wearables answer, with battery and signal strength. Nothing buzzes. |
+| [`examples/wearable_status.py`](integrations/python/examples/wearable_status.py) | A check before a session: can the gateway send, and which wearables answer, with battery and signal strength. Nothing buzzes. A wearable on its charging dock answers too, although in testing it did not respond to alerts. |
 
 The [Python client guide](integrations/python/README.md) documents every function and the `halow-client` command, and the [integrations overview](integrations/README.md) explains both modes, the settings and the errors. From another language, call the [HTTP API](docs/HTTP-API.md#calling-the-api) directly.
 
-**No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like a wearable, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented protocol; it does not prove the real wearable's behaviour.
+**No hardware yet?** [`tools/fake_wearable.py`](tools/fake_wearable.py) is a stand-in wearable (Python 3.8+, no dependencies) that answers alerts and heartbeat requests like a wearable, over loopback, so you can develop and test your integration on your own machine. [Try it without hardware](integrations/README.md#try-it-without-hardware) gives the exact commands for Linux, macOS and Windows, for direct mode and for the gateway image. It follows the documented message formats, but it ACKs at once (unless you pass `--ack-delay`) and gives the receive time in milliseconds, where the wearable tested on hardware ACKed about 5 s after the alert and gave the receive time in whole seconds. It does not prove the real wearable's behaviour.
 
 ## Requirements
 

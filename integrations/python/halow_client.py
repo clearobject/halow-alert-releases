@@ -25,7 +25,7 @@ Command line (installed: halow-client <command>, or python3 -m halow_client <com
   python3 halow_client.py wearables                                wearables the gateway has heard from
   python3 halow_client.py alert --label "zone-3"                   alert through the gateway
   python3 halow_client.py direct-heartbeat --egress 192.168.12.50  ask wearables to report in (no buzz)
-  python3 halow_client.py direct-alert --egress 192.168.12.50      alert directly, wait for ACKs
+  python3 halow_client.py direct-alert --egress 192.168.12.50      alert directly, wait 15 s for ACKs
   python3 halow_client.py selftest [VECTORS]                       check the codec against VECTORS, by default
                                                                    ../testdata/vectors.json (in the repository and kit)
 
@@ -284,7 +284,9 @@ class GatewayClient:
 
     def alert(self, label=None, fmt=None, burst_seconds=None) -> dict:
         """POST /alert. Every wearable on the HaLowLink network alerts. Returns the gateway's
-        send record. Raises HalowError (status 401, 429, 500, ...) when it fails."""
+        send record as soon as the alert is sent (with a burst, when the burst ends); it does not
+        wait for the ACKs, which come about 5 s later (see wearables()). Raises HalowError
+        (status 401, 429, 500, ...) when it fails."""
         body = {}
         if label is not None:
             body["label"] = str(label)
@@ -342,7 +344,8 @@ def send_direct(egress: str = "", fmt: str = "raw8", group: str = GROUP, port: i
 
     egress: this machine's address on the HaLowLink (default HALOW_EGRESS, else 192.168.12.50).
     burst_seconds > 0 resends the same bytes every burst_interval_ms for that long (max 5 s).
-    Returns a record like the gateway's. Does not wait for ACKs (see ResponseListener)."""
+    Returns a record like the gateway's as soon as the alert is sent (with a burst, when the
+    burst ends). Does not wait for ACKs, which come about 5 s later (see ResponseListener)."""
     egress = egress or _env("HALOW_EGRESS", DEFAULT_EGRESS)
     fmt = (fmt or "raw8").lower()
     if fmt not in FORMATS:
@@ -614,7 +617,7 @@ def _describe(r: dict) -> str:
         dev = "".join(ch if ch.isprintable() else "?" for ch in hb["device_id"])
         return (f"HEARTBEAT from {r['ip']}: device_id={dev} battery={hb['battery_percentage']}% "
                 f"rssi={hb['rssi']} dBm uptime={hb['uptime_seconds']} s")
-    return f"{r['code']} from {r['ip']}: wearable timestamp {r['timestamp_ms']} ms"
+    return f"{r['code']} from {r['ip']}: wearable timestamp {r['timestamp_ms']}"
 
 
 def _port_arg(v) -> int:
@@ -664,8 +667,9 @@ def main(argv=None) -> int:
     direct(s)
     s.add_argument("--format", default="raw8", choices=FORMATS)
     s.add_argument("--burst-seconds", type=_nonneg, default=0.0)
-    s.add_argument("--wait-acks", type=_nonneg, default=5.0,
-                   help="seconds to collect ACKs (default 5; 0 = don't listen)")
+    s.add_argument("--wait-acks", type=_nonneg, default=15.0,
+                   help="seconds to collect ACKs (default 15; 0 = don't listen). A wearable ACKs when its "
+                        "alarm ends, about 5 s after the alert")
     s = sub.add_parser("direct-heartbeat", help="ask the wearables to report in (no buzz)")
     direct(s)
     s.add_argument("--seconds", type=_nonneg, default=5.0, help="seconds to collect heartbeats (default 5)")
@@ -702,11 +706,15 @@ def main(argv=None) -> int:
                 rec = send_direct(egress, a.format, group, port, burst_seconds=a.burst_seconds)
                 print(f"alert sent: {rec['format']} -> {rec['group']} from {rec['egress']} "
                       f"({rec['datagrams']} datagram(s))", flush=True)
+                if rl:
+                    print(f"listening {listen_s:g} s for ACKs on TCP {rport} "
+                          f"(a wearable ACKs when its alarm ends, about 5 s after the alert) ...", flush=True)
             else:
                 send_heartbeat_request(egress, group, port)
                 print(f"heartbeat request sent -> {group}:{port} from {egress}", flush=True)
+                if rl:
+                    print(f"listening {listen_s:g} s for replies on TCP {rport} ...", flush=True)
             if rl:
-                print(f"listening {listen_s:g} s for replies on TCP {rport} ...", flush=True)
                 time.sleep(listen_s)
                 want = "ACK" if a.cmd == "direct-alert" else "HEARTBEAT"
                 n = sum(1 for r in rl.responses if r["code"] == want)
