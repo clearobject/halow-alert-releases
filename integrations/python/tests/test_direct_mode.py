@@ -294,8 +294,15 @@ class ResponseListenerTests(_ListenerCase):
                 send_tcp(rl.port, device_response(ts=i + 1))
                 sent += 1
             self.assertTrue(wait_until(lambda n=sent: len(count) == n, 10), (len(count), sent))
-        self.assertEqual(len(rl.responses), 1000)
-        self.assertEqual(sorted(r["timestamp_ms"] for r in rl.responses), list(range(6, 1006)))
+        # The listener keeps the last 1000 replies in the order they ARRIVED. Replies on
+        # concurrent connections can arrive out of timestamp order, so the 5 that drop out
+        # are 5 of the first batch, not necessarily timestamps 1-5 (seen on Python 3.8).
+        kept = [r["timestamp_ms"] for r in rl.responses]
+        self.assertEqual(len(kept), 1000)
+        self.assertEqual(len(set(kept)), 1000)
+        dropped = set(range(1, 1006)) - set(kept)
+        self.assertEqual(len(dropped), 5, sorted(dropped))
+        self.assertTrue(all(ts <= 25 for ts in dropped), sorted(dropped))
 
     def test_stop_frees_the_port_at_once(self):
         # stop() used to return while the accept loop still held the socket, so listening on
