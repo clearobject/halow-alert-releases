@@ -72,18 +72,24 @@ def pick_group(salt: str) -> str:
 
 
 def free_port() -> int:
-    """A port that is free on 127.0.0.1 for both TCP and UDP right now."""
-    for _ in range(50):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as t:
-            t.bind((LOOPBACK, 0))
-            port = t.getsockname()[1]
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as u:
-                try:
-                    u.bind((LOOPBACK, port))
-                except OSError:
-                    continue
-        if port not in (5000, 5001, 8080):
-            return port
+    """A port that is free on 127.0.0.1 for both TCP and UDP right now.
+
+    Candidates come from 20000-48999, below the OS temporary (ephemeral) range: on Windows a
+    UDP bind to a port the OS just handed out for TCP can be refused, and Hyper-V reserves
+    blocks inside that range, which made the old "bind port 0, then reuse it" approach run
+    out of candidates.
+    """
+    r = random.Random()
+    for _ in range(200):
+        port = r.randint(20000, 48999)
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as t, \
+                    socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as u:
+                t.bind((LOOPBACK, port))
+                u.bind((LOOPBACK, port))
+        except OSError:
+            continue
+        return port
     raise RuntimeError("no free port on 127.0.0.1")
 
 
