@@ -4,10 +4,12 @@
 
 **Make ClearObject ClearZone HaLow wearables alert from your own software.**
 
+**Latest release: [1.0.0](https://github.com/clearobject/halow-alert-releases/releases/tag/v1.0.0)**, with the kit zip and the Python package. Start with [Choose your setup](#choose-your-setup).
+
 ClearZone wearables (vests and handhelds) vibrate and sound when they receive an alert over a Wi-Fi HaLow (IEEE 802.11ah) network served by a Morse Micro HaLowLink 2. **halow-alert** is a small gateway service that lets any program, such as a simulator, a control application or a test script, trigger them with a single HTTP request, and that reports which wearables acknowledged. Everything runs on your local network: no cloud, no internet connection and no ClearObject Workzone camera system are needed. This repository holds the user documentation, a ready-made Python client, the Docker Compose kit and the releases. The service itself ships as the container image `ghcr.io/clearobject/halow-alert`.
 
 > [!NOTE]
-> **Version 1.0.0** has been tested in software on Linux, macOS and Windows, against a stand-in wearable that follows the documented message formats, and on 2026-11-24 with a HaLowLink 2 and a ClearZone wearable: `raw8` and `proto` alerts sent with halow-alert's `send` command, and a `raw8` alert sent with the Python client, were acknowledged by the wearable. The [changelog](CHANGELOG.md) lists what that test covered and what is still to check, including the gateway service and its HTTP API on hardware. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
+> On 2026-11-24, a ClearZone wearable on a HaLowLink 2 acknowledged alerts sent by halow-alert's `send` command and by the Python client. The gateway service and its HTTP API are so far tested in software only; the [changelog](CHANGELOG.md) lists what is still to check on hardware. If a wearable behaves differently from what these documents describe, please [open an issue](https://github.com/clearobject/halow-alert-releases/issues/new/choose).
 
 ## How it works
 
