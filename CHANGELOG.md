@@ -4,7 +4,7 @@ All notable changes for users of halow-alert are listed here: the container imag
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-11-22
+## [1.0.0] - 2026-11-25
 
 The first release. It has been tested in software on Linux, macOS and Windows, against the stand-in wearable over loopback, and on 2026-11-24 with HaLow hardware: a HaLowLink 2 and a ClearZone wearable. What that test showed, and the points still to check, are listed at the end.
 
