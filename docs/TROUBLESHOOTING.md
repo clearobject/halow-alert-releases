@@ -96,6 +96,8 @@ In the hardware test, the alert reached the wearable within a second. A wearable
 | Internet stops working on the gateway after connecting the HaLowLink | The HaLowLink interface got an address by DHCP, with a default route through the HaLowLink. Use the [static address with no gateway](NETWORK.md#set-the-address). |
 | Works, then stops after the HaLowLink is re-plugged | On Linux, `./setup-network-linux.sh show` should list the `halow` profile as active again, with `192.168.12.50`. The gateway service recovers by itself on the next request. |
 | Machines on your building network get `192.168.12.x` addresses | The HaLowLink's LAN port is connected to that network. Unplug it at once: [never do that](NETWORK.md#connect-the-halowlink). |
+| The HaLowLink's **Home** page shows **0** **Connected Devices** on its **Access Point (HaLow)** card | Is the wearable on, charged, and near the HaLowLink? If ClearObject sent you a settings file, the card's network name (SSID) should no longer be the one printed on the HaLowLink's label: if it still is, [load the file](NETWORK.md#load-a-settings-file-from-clearobject). If someone saved changes in the HaLowLink's Wizard, which overwrites the file's settings, reset the HaLowLink to its factory settings and load the file again. |
+| The HaLowLink admin login fails, before or after loading a settings file | The file does not change the login. Use the **Device Username** and **Password** on the HaLowLink's label, not its Wi-Fi password, or the login ClearObject sent you, if it sent one. If none of them works, reset the HaLowLink to its factory settings and load the file again ([how](NETWORK.md#load-a-settings-file-from-clearobject)). |
 
 ## The gateway service (setup A)
 
@@ -140,7 +142,7 @@ In the hardware test, the alert reached the wearable within a second. A wearable
 
 ## What to include in a bug report
 
-**Never paste tokens, passwords, HaLow network passphrases, your `.env` file or the output of `docker compose config`.** The gateway's own logs and `doctor` never contain the token.
+**Never paste or attach tokens, passwords, HaLow network passphrases, the HaLowLink settings file from ClearObject, your `.env` file or the output of `docker compose config`.** The gateway's own logs and `doctor` never contain the token.
 
 Issues are public. Replace host names, user names, alert labels you do not want published and every address outside `192.168.12.x` with `<removed>`, or send full logs to your ClearObject contact instead.
 

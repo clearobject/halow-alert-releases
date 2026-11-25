@@ -6,6 +6,7 @@ This guide connects the HaLowLink 2 to the machine that sends the alerts (the Li
 
 - [What you set up](#what-you-set-up)
 - [Before you start](#before-you-start)
+- [Load a settings file from ClearObject](#load-a-settings-file-from-clearobject)
 - [Connect the HaLowLink](#connect-the-halowlink)
 - [Set the address](#set-the-address): [Linux](#linux-with-networkmanager-recommended), [Linux without NetworkManager](#linux-without-networkmanager), [macOS](#macos), [Windows](#windows)
 - [Firewall](#firewall)
@@ -43,14 +44,31 @@ Your machine keeps its normal network connection, with its internet access and d
 
 ## Before you start
 
-ClearObject configures each unit before handover:
+ClearObject either configures the HaLowLink before handover, or sends you a settings file to load into it once ([how](#load-a-settings-file-from-clearobject)). Either way:
 
 - the HaLowLink 2 is in **Router with HaLow Access Point** mode (the factory default), at `192.168.12.1/24`, and serves addresses to the wearables;
-- the wearable is joined to the HaLowLink's HaLow network (WPA3-SAE);
+- the wearable is set up for the HaLowLink's HaLow network (WPA3-SAE) and joins it by itself;
 - the HaLowLink's 2.4 GHz Wi-Fi access point is off (check this on the admin page, and turn it off if it is on);
-- you receive the HaLowLink admin password and the HaLow network details separately.
+- the admin login is the one on the HaLowLink's label, unless ClearObject sends you another one separately.
 
 You do not need to change any of this. The HaLowLink admin page is at `https://192.168.12.1` (HTTPS only; your browser warns about its self-signed certificate). Its **Home** page lists the joined wearables in the **Connected Devices** card, and their `192.168.12.x` addresses in the **Local Network** card.
+
+## Load a settings file from ClearObject
+
+If ClearObject sent you a settings file for the HaLowLink (a `.tar.gz` archive), load it once, before anything else. It sets up the HaLow network that your wearable is already set up for, and turns off the HaLowLink's 2.4 GHz Wi-Fi. It does not change the admin login. It takes about ten minutes.
+
+1. Save the settings file on a computer with a web browser. Any computer will do, not only the one that will send the alerts. While it is connected to the HaLowLink, that computer may lose its internet access ([why](#why-a-static-address-without-a-gateway)).
+2. Screw the antenna onto the HaLowLink if it is not on yet. Power the HaLowLink and connect the computer to it, by USB-C or to its **LAN** port ([details](#connect-the-halowlink)). Wait until the HaLowLink's Status LED is solid green, about a minute. A computer set to get its address automatically (the usual setting) gets a `192.168.12.x` address from the HaLowLink; one already set to `192.168.12.50` works too.
+3. Open `https://192.168.12.1`. Your browser warns about the HaLowLink's self-signed certificate; continue to the page. Log in with the **Device Username** and **Password** printed on the HaLowLink's label, not its Wi-Fi password.
+4. In the side menu, open **System**, then **Backup / Flash Firmware**. If **System** is not in the menu, turn on **Advanced Config** first.
+5. Under **Restore**, click **Upload archive...**. In the window that opens, click **Browse...**, choose the settings file, and click **Upload**. The next window, **Apply backup?**, lists the files in the archive, all under `etc/config/`; click **Continue**. The HaLowLink applies the settings and restarts. Wait about 2 minutes, until its Status LED is solid green again.
+6. Turn the wearable on and take it off its charging dock. Log in again, with the same login. On the **Home** page, the **Access Point (HaLow)** card should show a network name (SSID) other than the one printed on the HaLowLink's label, and **Connected Devices** should count the wearable within a minute or two. The HaLowLink's 2.4 GHz Wi-Fi LED stays off.
+
+Then go on with the rest of this guide. [Check the setup](#check-the-setup) ends with a check that the wearables answer.
+
+- **Do not save anything in the HaLowLink's Wizard afterwards.** The HaLowLink user guide notes that the Wizard starts from the default settings and overwrites changes made outside it. If someone did, reset the HaLowLink to its factory settings and load the file again.
+- **If something goes wrong** (the Status LED is not solid green 5 minutes after a restart, or **Connected Devices** stays at 0 with the wearable on and charged), reset the HaLowLink to its factory settings and start again at step 2. To reset it, wait until its Status LED is solid green (or solid aqua), then hold its **Mode** button until the LED flashes slowly green, and release it. The reset is done when the LED is solid green again. If you hold the button until the LED flashes quickly aqua, the HaLowLink resets into Extender mode instead. Do not hold the button while you plug the HaLowLink in: that starts its firmware recovery mode.
+- **Keep the file private.** It contains the HaLow network passphrase, and anything that joins that network can trigger the wearables.
 
 ## Connect the HaLowLink
 
@@ -234,6 +252,13 @@ ping 192.168.12.1
 
 On every OS, `https://192.168.12.1` should open the HaLowLink admin page.
 
+**Check that the wearables answer.** This asks every wearable on the HaLowLink to report in, and nothing buzzes. Each wearable that is on answers within a second, with its battery level and signal strength. A wearable on its charging dock answers too, although in testing it did not respond to alerts there.
+
+- **Setup A,** before you start the service, on the gateway: `docker run --rm --network host ghcr.io/clearobject/halow-alert:1.0.0 wearables` asks for 20 s and lists the wearables that answered. Once the service runs, `curl http://<gateway>:8080/wearables` shows the same, since the service asks every 15 s.
+- **Setup B,** with the [Python client](../integrations/python/README.md) installed: `halow-client direct-heartbeat --egress 192.168.12.50` prints a `HEARTBEAT from 192.168.12.x: ...` line for each wearable, then the count, `N HEARTBEAT(s) from M wearable(s)`.
+
+Both need TCP 5001 free on that machine and allowed from `192.168.12.0/24` in its [firewall](#firewall). If no wearable answers, look at **Connected Devices** on the HaLowLink's **Home** page. At 0, see [Troubleshooting](TROUBLESHOOTING.md#network-and-halowlink). Otherwise the replies do not reach this machine: check its [firewall](#firewall) and any [VPN](#vpns), and if a firewall prompt appeared, allow it and run the check again.
+
 ## VPNs
 
 A VPN that routes `192.168.12.0/24`, or every address, into its tunnel breaks the link to the wearables. The alert may still leave on the HaLowLink interface, because the sender pins it, but replies to the HaLowLink and the wearables go into the tunnel. Then ACKs, heartbeats, `doctor` and the admin page all fail.
@@ -255,7 +280,7 @@ Some managed VPN clients block all local network traffic by policy. Then the onl
 - **2.4 GHz Wi-Fi access point:** leave it off. Anything that joins it is on the same network as the wearables and can trigger them.
 - **Mode:** leave it in Router with HaLow Access Point mode, with the LAN, USB-C and HaLow interfaces bridged (the default). The bridge is what carries the multicast onto the radio.
 - **Address clash:** if a network your machine is already on also uses `192.168.12.0/24` (some lab and home routers do), your machine cannot tell the two apart. Disconnect that network from this machine, or contact ClearObject.
-- **Passwords:** keep the admin password and the HaLow network passphrase out of issues, repositories and shared documents.
+- **Passwords:** keep the admin password, the HaLow network passphrase and any HaLowLink settings file out of issues, repositories and shared documents.
 
 ## Why a static address without a gateway
 

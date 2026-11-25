@@ -59,7 +59,7 @@ Both send the same bytes. Everything stays on the local link: no part of the sys
 | **ClearZone wearables** | On the HaLow network, `192.168.12.x` | Listen for the alert group. Alarm (vibration and sound) on an alert, and drop repeats of an alert they already acted on (documented for `proto`, not yet known for `raw8`). Answer with an ACK, and answer heartbeat requests, over TCP 5001. |
 | **Direct-mode program** | The machine plugged into the HaLowLink, at `192.168.12.50` | Does the gateway's network job itself: the multicast, and optionally the TCP 5001 listener. |
 
-ClearObject sets up the HaLowLink (mode, admin password, its HaLow network) and joins the wearable to it before handover.
+ClearObject sets up the HaLowLink (its mode and its HaLow network) before handover, or sends a settings file that does it ([how to load it](NETWORK.md#load-a-settings-file-from-clearobject)). The wearable is already set up for that HaLow network.
 
 ## Inside the gateway service
 
@@ -212,7 +212,7 @@ Because the heartbeat echoes the request's timestamp, "now minus `timestamp_ms`"
 
 1. **The HTTP API (setup A).** `POST /alert` needs `Authorization: Bearer <token>`. The service refuses to start on anything but `127.0.0.1` without a token (unless you explicitly pass `--allow-no-token`), and refuses the placeholder token `CHANGE-ME`. The token is compared in constant time and never logged. `GET /health` and `GET /wearables` need no token; they reveal wearable addresses, device IDs, battery and signal strength to anyone who can reach the port. The API speaks plain HTTP, so the token is visible on the wire: use it on a network you trust, and allow TCP 8080 only from your client machines in the host firewall. If you need encryption, put a TLS reverse proxy on the gateway in front of it. The API sends no CORS headers, so a web page in a browser cannot call it with your token. Without a token (a gateway on `127.0.0.1`, or `--allow-no-token`), none is needed: any program on that machine (with `--allow-no-token`, on any machine that can reach the port), and any web page open in a browser that can reach the port, can send a plain `POST /alert` and set off the wearables. Keep a token whenever a browser runs on a machine that can reach the API.
 2. **The HaLowLink network (`192.168.12.0/24`).** The alert protocol itself has **no authentication**: anything on that network can send the multicast and set off every wearable. Access to it is controlled by:
-   - the HaLow radio, which uses WPA3-SAE with a passphrase ClearObject gives you separately;
+   - the HaLow radio, which uses WPA3-SAE with a passphrase that ClearObject sets (on the HaLowLink before handover, or in the settings file it sends you);
    - physical access to the HaLowLink's USB-C and LAN ports. Never connect the LAN port to another network;
    - the HaLowLink's 2.4 GHz Wi-Fi access point, which the kit does not use. Keep it off.
 

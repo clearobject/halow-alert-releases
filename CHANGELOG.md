@@ -4,6 +4,14 @@ All notable changes for users of halow-alert are listed here: the container imag
 
 ## [Unreleased]
 
+### Added
+
+- Network guide: how to load a HaLowLink settings file from ClearObject, and how to check that the wearables answer (a heartbeat request; nothing buzzes). Two matching rows in the troubleshooting guide.
+
+### Verified on hardware (2026-11-25)
+
+- The Python client's heartbeat request (`send_heartbeat_request`, as sent by `halow-client direct-heartbeat`): all five wearables on the HaLowLink answered within 0.2 s. Another application received the replies, so the client's reply listener is still to be checked with a real wearable.
+
 ## [1.0.0] - 2026-11-25
 
 The first release. It has been tested in software on Linux, macOS and Windows, against the stand-in wearable over loopback, and on 2026-11-24 with HaLow hardware: a HaLowLink 2 and a ClearZone wearable. What that test showed, and the points still to check, are listed at the end.

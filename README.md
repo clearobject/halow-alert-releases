@@ -57,6 +57,8 @@ Docker Desktop (on macOS, Windows or Linux) and rootless Docker run containers i
 > [!WARNING]
 > The wearables vibrate and sound at full volume. Tell the people nearby before you send an alert.
 
+If ClearObject sent you a settings file for the HaLowLink, [load it](docs/NETWORK.md#load-a-settings-file-from-clearobject) before either setup. It takes about ten minutes.
+
 > [!IMPORTANT]
 > Take the wearable off its charging dock before you test. In testing, a wearable on its charging dock did not respond to alerts, although it kept answering heartbeat requests.
 
@@ -192,7 +194,7 @@ The [Python client guide](integrations/python/README.md) documents every functio
 
 | Item | Value |
 |---|---|
-| HaLowLink 2 | Router with HaLow Access Point mode (the factory default), `192.168.12.1/24`. ClearObject sets it up and joins the wearable to it before handover. |
+| HaLowLink 2 | Router with HaLow Access Point mode (the factory default), `192.168.12.1/24`. ClearObject sets it up before handover, or sends you a settings file to load into it ([how](docs/NETWORK.md#load-a-settings-file-from-clearobject)). The wearable is already set up for its HaLow network. |
 | Link to the HaLowLink | Its USB-C port (one cable, also powers it) or its **LAN** port. Never the WAN port, and never connect the LAN port to another network. |
 | Address on the HaLowLink side | **`192.168.12.50/24`, static, no gateway**, on the gateway (setup A) or on your machine (setup B) |
 | Alerts | UDP multicast **out** to `239.255.0.10:5000` (multicast TTL 1 or more) |
